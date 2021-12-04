@@ -1,0 +1,17 @@
+ManagerApplication\ManagerApplication.class
+ManagerApplication\HttpResponse.class
+ManagerApplication\ZipUtils.class
+PSO\Vector.class
+ManagerApplication\Command.class
+ManagerApplication\Handler.class
+ManagerApplication\ManagerApplication$1.class
+ManagerApplication\Service.class
+PSO\Particle.class
+ManagerApplication\Container.class
+ManagerApplication\Worker.class
+ManagerApplication\RestHttpClient.class
+ManagerApplication\PullData.class
+ManagerApplication\DockerController.class
+PSO\Function.class
+PSO\Swarm.class
+ManagerApplication\ConfigVar.class
