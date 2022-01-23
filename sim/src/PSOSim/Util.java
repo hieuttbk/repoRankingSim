@@ -1,7 +1,7 @@
 package PSOSim;
 
-import RPL.Constants;
-import RPL.Node;
+import multihop.Constants;
+import multihop.Node;
 
 public class Util {
 	
@@ -18,11 +18,30 @@ public class Util {
 		return t; 
 	}
 	
+	
+	
+	static double caclTimeComputeMulti(Node n) {
+	//	System.out.println("Node compute is " +  n.getId());
+		double t=n.getWL()/n.getRes(); 
+		return t; 
+	}
+	
+	static double caclTimeTransMulti(Node n, Node bestNode) {
+		double t=n.getWL()/Constants.BW;
+		int d=(n.getLvl()-bestNode.getLvl());
+		if (d<=0) return 0;
+		t*=d; // number of path * t_trans
+		return t; 
+	}
+	
+	
+	
 	static double caclTimeCompute(Node n) {
 	//	System.out.println("Node compute is " +  n.getId());
 		double t=n.getWL()/n.getRes(); 
 		return t; 
 	}
+	
 	
 	static double calcTime(double WL) {
 		

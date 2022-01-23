@@ -1,4 +1,4 @@
-package RPL;
+package multihop;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,9 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import PSOSim.Swarm;
-import RPL.Util;
-import PSOSim.Vector;
+import PSOSim.PSOSwarm;
+import PSOSim.PSOVector;
 
 public class MainRPL {
 	public static void main(String[] args) throws IOException {
@@ -19,6 +18,13 @@ public class MainRPL {
 		/**
 		 * ------------------------------- Init node -------------------------------
 		 **/
+		
+		//TODO:
+		//Create initTopo(longs, width) > return topo[]. 
+		
+		
+		
+		List<RTable> rtable = new ArrayList<RTable>();
 
 		// location
 		Node m = new Node(0, "Man", 0, 0);
@@ -43,6 +49,11 @@ public class MainRPL {
 		// in oneM2M, neighbor is determined by registry procedures
 
 		setupTopo(topo);
+		rtable = createRoutingTable(topo, rtable);
+
+		rtable.forEach((e) -> {
+			System.out.println(e.toString());
+		});
 
 		// update gain from high level to low auto
 		int maxLvl = findMaxLvl(topo);
@@ -60,27 +71,43 @@ public class MainRPL {
 		// findCluster(m);
 		calcRankCluster(topo);
 
-		for (Node n : topo) {
-			System.out.println(
-					"Node: " + n.getId() + " Rank: " + n.getRank() + " RankCluster: " + n.getRankCluster() + "" );
+//		for (Node n : topo) {
+//			System.out.println(
+//					"Node: " + n.getId() + " Rank: " + n.getRank() + " RankCluster: " + n.getRankCluster() + "");
+//
+//		}
 
-			
-		}
-
-		// debug infomation of network
+//		 debug infomation of network
 //		System.out.println("\n>>> SHOW NODE INFO");
 //		for (Node node : topo) {
-//			System.out.println("\nNode " + node.getName() + ": lvl = " + node.getLvl() + " | gain = "+ node.getGain() + " | res = "+ node.getRes());
-//			
-//	//		System.out.print("  Neighbour: " );
+//			System.out.println("\nNode " + node.getName() + ": lvl = " + node.getLvl() + " | gain = " + node.getGain()
+//					+ " | res = " + node.getRes());
+//
+//			System.out.print("  Neighbour: ");
 //			for (Node nodec : node.getNodeLK()) {
 //				System.out.print(nodec.getName() + ", ");
-//			}	
-//			
-//			
-//		//	System.out.print("\n  Child: " );
+//			}
+//
+//			System.out.print("\n  Child: ");
 //			for (Node nodec : node.getNodeChild()) {
-//	//			System.out.print(nodec.getName()+ ", ");
+//				System.out.print(nodec.getName() + ", ");
+//			}
+//		}
+
+		// create table routing
+		// id Des Route
+//		for (Node node : topo) {
+//			// System.out.println("\nNode " + node.getName() + ": lvl = " + node.getLvl() +
+//			// " | gain = "+ node.getGain() + " | res = "+ node.getRes());
+//
+//			System.out.print("  Neighbour: ");
+//			for (Node nodec : node.getNodeLK()) {
+//				System.out.print(nodec.getName() + ", ");
+//			}
+//
+//			System.out.print("\n  Child: ");
+//			for (Node nodec : node.getNodeChild()) {
+//				System.out.print(nodec.getName() + ", ");
 //			}
 //		}
 
@@ -106,29 +133,25 @@ public class MainRPL {
 
 		int WL = 80;
 		for (Node n : topo) {
-			myWriter.write(
-					"\nNode: " + n.getId() + " Rank: " + n.getRank() + " RankCluster: " + n.getRankCluster());
+			myWriter.write("\nNode: " + n.getId() + " Rank: " + n.getRank() + " RankCluster: " + n.getRankCluster());
 
-			
 		}
 
-		
-
 		myWriter.write("\n\n" + "WL\t" + "nodeID\t" + "worload\t" + "timeCompute\t" + "timeTrans\t" + "timeServ\t\n");
-		myWriterPSO.write("\n" + "WL\t" + "nodeID\t" + "worload\t" + "timeCompute\t" + "timeTrans\t" + "timeServ\t\n");
-
+//		myWriterPSO.write("\n" + "WL\t" + "nodeID\t" + "worload\t" + "timeCompute\t" + "timeTrans\t" + "timeServ\t\n");
+		myWriterPSO.write("\n" + "WL\t" + "nodeID\t" + "path\t" + "worload\t" + "timeCompute\t" + "timeTrans\t" + "timeServ\t\n");
 		for (int w = 1; w <= 5; w++) {
 
 			myWriter.write("\n");
 			myWriterPSO.write("\n");
 
-			WL = 100 * w;
-
+			//WL = 100 * w;
+			WL = 500;
 			System.out.println("\nWORKLOAD = " + WL);
 			// System.out.println("\n\n >>> FIND BEST NODE");
 			double lat = 0.5;
-			double lng=0.5;
-			Node nNode = findBestNode(WL, topo,lat,lng); // find the best node
+			double lng = 0.5;
+			Node nNode = findBestNode(WL, topo, lat, lng); // find the best node
 
 			// fix node is Man/0
 			Node bestNode = m;
@@ -159,7 +182,7 @@ public class MainRPL {
 			Map<String, Double> time = new HashMap<String, Double>();
 
 			for (Node node : topo) {
-				nNode=m;
+				nNode = m;
 				// System.out.println("Time compute of node " + node.getId() + " = " +
 				// Util.caclTimeCompute(node));
 				t_trans = 0;
@@ -169,7 +192,6 @@ public class MainRPL {
 				// TODO:
 				// bestNode is optimal
 
-			
 				// System.out.println("Time trans of node " + node.getId() + " = " +
 				// Util.caclTimeTrans(node,bestNode));
 				t_trans += Util.caclTimeTrans(node, nNode);
@@ -205,66 +227,108 @@ public class MainRPL {
 			// System.out.println("Time = " + maxEntry.getKey() + " is " +
 			// maxEntry.getValue());
 
+			System.out.println("***********PSO***********\n");
+			HashMap<Integer, Double> resultPSO = getPSO(WL, bestNode, rtable); // estimate pi for node i
+
+//			Set<Integer> nodeID = resultPSO.keySet();
+//			for (Integer id : nodeID) {
+//				for (Node node : topo) {
+//					if (node.getId() == id) {
+//						node.setWL(resultPSO.get(id));
+//					}
+//				}
+//			} //
 			
-			  System.out.println("***********PSO***********\n"); HashMap<Integer,Double>
-			  resultPSO = getPSO(WL, bestNode); // estimate pi for node i
-			  
-			  
-			  Set<Integer> nodeID = resultPSO.keySet(); for (Integer id:nodeID) { for (Node
-			  node:topo) { if (node.getId()==id) { node.setWL(resultPSO.get(id)); } } } //
-			  System.out.println("Proportion PSO " + bestNode.getName() + " " + resultPSO
-			  );
-			  
-			  
-			  // calc T_serve t_ser=0; t_trans=0; t_compute=0;
-			  
-			  Map<String,Double> timePSO = new HashMap<String,Double>();
-			  
-			  
-			  for (Node node : topo) { 
-					t_trans = 0;
-					t_compute = 0;
-				  
-				  
-			System.out.println("Time compute of node " +
-			  node.getId() + " = " + Util.caclTimeCompute(node));
-			  t_compute+=Util.caclTimeCompute(node);
-			  
-			   System.out.println("Time trans of node " + node.getId() + " = " +
-			  Util.caclTimeTrans(node,bestNode));
-			  t_trans+=Util.caclTimeTrans(node,bestNode);
-			  
-			  
-			  t_ser=t_compute+t_trans; 
-			  System.out.println("Time of node " + node.getId()
-			  + " = " + t_ser);
-			  
-			  timePSO.put(node.getName(),t_ser);
-			  
-			  myWriterPSO.write(WL + " \t "+node.getId() + " \t " + node.getWL() + " \t " +
-			  Util.caclTimeCompute(node) + " \t " + Util.caclTimeTrans(node,bestNode)+
-			  " \t " + t_ser+ "\n"); }
-			  
-			  Set<String> timeSetPSO=timePSO.keySet(); for(String nodeName:timeSetPSO) {
-			  if(timePSO.get(nodeName)>0) { 
-				  System.out.println("Time of node " +
-			  nodeName + " = " + timePSO.get(nodeName)); } }
-			  
-			  
-			  Map.Entry<String,Double> maxEntryPSO = null;
-			  
-			  for (Map.Entry<String,Double> entry : timePSO.entrySet()) { if (maxEntryPSO
-			  == null || entry.getValue().compareTo(maxEntryPSO.getValue()) > 0) {
-			  maxEntryPSO = entry; } } 
-			  System.out.println("PSO Time = " +
-			  maxEntryPSO.getKey() + " is " + maxEntryPSO.getValue());
-			  
-			  System.out.println("***********COMPARE***********" +
-			  (maxEntryPSO.getValue()-maxEntry.getValue()));
-			  System.out.println("PSO - Ranking\n" + maxEntryPSO.getKey() + " is " +
-			  maxEntryPSO.getValue() + "\n" + maxEntry.getKey() + " is " +
-			  maxEntry.getValue() );
-			 
+			
+			Set<Integer> rID = resultPSO.keySet();
+			for (Integer id : rID) {
+					rtable.get(id).setRatio(resultPSO.get(id)/100);
+			}
+			
+			for (RTable r: rtable) {
+				double compute=0;
+				double trans;
+				double workLoad = WL;
+				compute = r.getRatio() * workLoad / r.getResource();
+				if (r.getNpath() > 1) {
+					// process with r.getDes()
+					for (RTable r2 : rtable) {
+						if ((r2.getDes() == r.getDes())&&(r2.getId() != r.getId())) {
+							compute += r2.getRatio() * workLoad / r2.getResource();
+							//System.out.println(" Node:" + r.getId() + " and Node:" + r2.getId()  + " time:" + compute);
+						}
+					}
+				}
+				
+			//	System.out.println(" ration" + r.getRatio());
+				trans= (r.getRatio() * workLoad / Constants.BW ) * r.getHop();
+
+				if (r.getId()==0) {t_trans=0;};
+				r.setTimeCompute(compute);
+				r.setTimeTrans(trans);
+				double ser=compute+trans;
+				myWriterPSO
+				.write(WL + " \t " + r.getDes() + " \t " + r.getRoute() + " \t " + r.getRatio()*WL + " \t " + r.getTimeCompute()
+						+ " \t " + r.getTimeTrans() +" \t" + ser  + "\n" );
+			}
+			
+			
+			rtable.forEach((r) -> {
+				System.out.println(r.toString());
+				
+				
+				
+			});
+			
+			
+			
+			
+			
+			System.out.println("Proportion PSO " + bestNode.getName() + " " + resultPSO);
+
+			// calc T_serve t_ser=0; t_trans=0; t_compute=0;
+
+			Map<String, Double> timePSO = new HashMap<String, Double>();
+
+			for (Node node : topo) {
+				t_trans = 0;
+				t_compute = 0;
+
+			//	System.out.println("Time compute of node " + node.getId() + " = " + Util.caclTimeCompute(node));
+				t_compute += Util.caclTimeCompute(node);
+
+			//	System.out.println("Time trans of node " + node.getId() + " = " + Util.caclTimeTrans(node, bestNode));
+				t_trans += Util.caclTimeTrans(node, bestNode);
+
+				t_ser = t_compute + t_trans;
+				//System.out.println("Time of node " + node.getId() + " = " + t_ser);
+
+				timePSO.put(node.getName(), t_ser);
+
+//				myWriterPSO
+//						.write(WL + " \t " + node.getId() + " \t " + node.getWL() + " \t " + Util.caclTimeCompute(node)
+//								+ " \t " + Util.caclTimeTrans(node, bestNode) + " \t " + t_ser + "\n");
+			}
+
+			Set<String> timeSetPSO = timePSO.keySet();
+			for (String nodeName : timeSetPSO) {
+				if (timePSO.get(nodeName) > 0) {
+					//System.out.println("Time of node " + nodeName + " = " + timePSO.get(nodeName));
+				}
+			}
+
+			Map.Entry<String, Double> maxEntryPSO = null;
+
+			for (Map.Entry<String, Double> entry : timePSO.entrySet()) {
+				if (maxEntryPSO == null || entry.getValue().compareTo(maxEntryPSO.getValue()) > 0) {
+					maxEntryPSO = entry;
+				}
+			}
+			System.out.println("PSO Time = " + maxEntryPSO.getKey() + " is " + maxEntryPSO.getValue());
+
+			System.out.println("***********COMPARE***********" + (maxEntryPSO.getValue() - maxEntry.getValue()));
+			System.out.println("PSO - Ranking\n" + maxEntryPSO.getKey() + " is " + maxEntryPSO.getValue() + "\n"
+					+ maxEntry.getKey() + " is " + maxEntry.getValue());
 
 		}
 		myWriter.close();
@@ -280,7 +344,43 @@ public class MainRPL {
 
 		// show parent
 
-		// BFS to show what?
+		// BFS to show what? Process node
+
+	}
+
+	private static List<RTable> createRoutingTable(Node[] topo, List<RTable> rtable) {
+		Node root = topo[0];
+		rtable.add(0, new RTable(0, root.getName(), root.getName(), 0, root.getRes()));
+
+		int id = 1;
+		for (Node n1 : root.getNodeLK()) {
+			//System.out.println(">>ADD DES: " + n1.getName() + " ROUTE: " + root.getName());
+			rtable.add(id, new RTable(id, n1.getName(), root.getName(), 1, n1.getRes()));
+			rtable.get(id).setNpath(1);
+
+			id++;
+			int npath = 1;
+			for (Node n2 : n1.getNodeLK()) {
+				if (n2.getId() != root.getId()) {
+
+					// adding vNode
+					n2.getvNode().add(n1);
+					rtable.add(id, new RTable(id, n2.getName(), n1.getName(), 2, n1.getRes()));
+					rtable.get(id).setNpath(npath);
+					//System.out.println(">>ADD DES: " + n2.getName() + " ROUTE: " + n1.getName() + " | " + npath);
+
+					npath++;
+					id++;
+
+				}
+			}
+		}
+
+		for (Node node : topo) {
+			// rtable.get(r);
+
+		}
+		return rtable;
 
 	}
 
@@ -324,7 +424,8 @@ public class MainRPL {
 		n.getParent().getNodeCluster().add(n);
 		n.getParent().getNodeCluster().addAll(n.getNodeChild());
 
-		//System.out.println(n.getParent().getId() + " adding " + n.getId() + " and child");
+		// System.out.println(n.getParent().getId() + " adding " + n.getId() + " and
+		// child");
 	}
 
 	private static void calcRankCluster(Node[] topo) {
@@ -343,21 +444,21 @@ public class MainRPL {
 		}
 	}
 
-	private static Node findBestNode(double workLoad, Node[] topo,double lat, double lng) {
-		// find range of node near workload and compare rankCluster and choose 
+	private static Node findBestNode(double workLoad, Node[] topo, double lat, double lng) {
+		// find range of node near workload and compare rankCluster and choose
 		double a = Constants.MAXDOUBLE;
 		Node x = new Node(Constants.MAXINT, "x", lat, lng);
-		
+
 		List<Node> listNode = new ArrayList<Node>();
-		
+
 		for (Node node : topo) {
-			if(node.checkLK(x)) listNode.add(node);
+			if (node.checkLK(x))
+				listNode.add(node);
 		}
-		
-		
+
 		Node bestNode = null;
 		for (Node node : listNode) {
-			System.out.println("Process node " + node.getId());
+			//System.out.println("Process node " + node.getId());
 
 			double k = node.getRankCluster();
 			if (k < a) {
@@ -402,15 +503,25 @@ public class MainRPL {
 
 	}
 
-	private static HashMap<Integer, Double> getPSO(double workload, Node bestNode) {
+	/**
+	 * get rations for networks using PSO
+	 * config PSO prams in the method
+	 * @param workload is total workload need assigned
+	 * @param bestNode is the data owner node, others connect to it
+	 * @param rtable is full info of network, can cacl time_trans, time_compute using prams in the table
+	 * @return ration p as HashMap<id,value>
+	 * */
+	private static HashMap<Integer, Double> getPSO(double workload, Node bestNode, List<RTable> rtable) {
+
 		HashMap<Integer, Double> result = new HashMap<Integer, Double>();
 		// int num = bestNode.getNodeChild().size()+1;
-		int num = 6; // number of node in network
+		// int num = 6; // number of node in network
+		int num = rtable.size();
 		double[] p = new double[num];
 
 		int particles = Constants.particles;
 		int epchos = Constants.epchos;
-		int nnodes = num;
+		int nnodes = num;  // number of nodes/dimenssion
 		int workLoad = (int) workload;
 
 		int nworker = num;
@@ -420,9 +531,9 @@ public class MainRPL {
 			cWorkload[i] = 0;
 		}
 
-		Vector currentWorkload = new Vector(cWorkload);
+		PSOVector currentWorkload = new PSOVector(cWorkload);
 
-		Swarm swarm = new Swarm(particles, epchos, nnodes, workLoad, currentWorkload, bestNode);
+		PSOSwarm swarm = new PSOSwarm(particles, epchos, nnodes, workLoad, currentWorkload, bestNode, rtable);
 
 		Map<Integer, Double> ratio = swarm.run("service-id-string");
 		// ` System.out.println(ratio.toString());

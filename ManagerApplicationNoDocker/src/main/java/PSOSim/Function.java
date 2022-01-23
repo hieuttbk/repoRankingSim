@@ -115,9 +115,9 @@ class Function {
 //				}
 //			}
 //		}
-		System.out.println("CALC TIME");
-		calcTimeSer(bestNode, position);
-		
+		//System.out.println("CALC TIME");
+		//calcTimeSer(bestNode, position);
+		calcTimeSerMulti(bestNode, position);
 		// LOL 
 		// If all nodes join in calc, we can for all node and calc to root.
 		// the function aims to scan all child and descendants. 
@@ -125,12 +125,18 @@ class Function {
 
 	}
 
+	private void calcTimeSerMulti(Node bestNode2, Vector position) {
+		// TODO deal with vNode
+		
+		
+	}
+
 	private void calcTimeSer(Node root, Vector position) {
 		
 		if (!root.getNodeChild().isEmpty()) {
 			for (Node n : root.getNodeChild()) {
 				position.setPAt(n.getId(), Util.caclTimeCompute(n) + (n.getLvl())*Util.caclTimeTrans(n, root));
-				System.out.println("DEBUG calc node " + n.getId() +  " -> " + " hc " + n.getLvl());
+		//		System.out.println("DEBUG calc node " + n.getId() +  " -> " + " hc " + n.getLvl());
 				calcTimeSer(n, position);
 			}
 		}

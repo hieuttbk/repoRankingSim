@@ -1,4 +1,4 @@
-package RPL;
+package multihop;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +27,7 @@ public class Node {
 	
 	Vector<Node> nodeCluster = new Vector<Node>();
 
+	Vector<Node> vNode = new Vector<Node>();
 	
 	Map<Integer,Double> rankMap =  new HashMap<Integer,Double>();
 	
@@ -89,11 +90,22 @@ public class Node {
 	
 	Node(){};
 	
+	/**
+	 * init WL =0 and RES = Const
+	 * */
 	Node (int id, String name, double lat, double lng){
 		this.id=id;
 		this.name=name;
 		this.lat=lat;
 		this.lng=lng;
+		this.WL=0;
+		this.res=Constants.RES;
+	}
+	
+	
+	public String toString() {
+		return "Node" + id + " " + lat + " " + lng;
+		
 	}
 	
 	Boolean checkLK(Node a) {
@@ -201,6 +213,16 @@ public class Node {
 
 	public void setGain(double gain) {
 		this.gain = gain;
+	}
+
+
+	public Vector<Node> getvNode() {
+		return vNode;
+	}
+
+
+	public void setvNode(Vector<Node> vNode) {
+		this.vNode = vNode;
 	}
 	
 	

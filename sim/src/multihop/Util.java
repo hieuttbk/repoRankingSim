@@ -1,12 +1,9 @@
-package PSOSim;
-
-import RPL.Constants;
-import RPL.Node;
+package multihop;
 
 public class Util {
 	
 	// cacl distance node A and node B
-	public static double calcDistance(Node a, Node b) {
+	static double calcDistance(Node a, Node b) {
 		return (b.getLat()-a.getLat())*(b.getLat()-a.getLat())+(b.getLng()-a.getLng())*(b.getLng()-a.getLng());	
 	}
 	
@@ -19,7 +16,6 @@ public class Util {
 	}
 	
 	static double caclTimeCompute(Node n) {
-	//	System.out.println("Node compute is " +  n.getId());
 		double t=n.getWL()/n.getRes(); 
 		return t; 
 	}
