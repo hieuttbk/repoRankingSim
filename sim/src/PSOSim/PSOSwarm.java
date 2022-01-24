@@ -43,6 +43,7 @@ public class PSOSwarm {
     
     
 	private List<RTable> rtable = new ArrayList<RTable>();
+	HashMap<Integer, List<RTable>> mapRTable = new HashMap<Integer, List<RTable>>();
 
     
     //private static final Logger LOGGER = LogManager.getLogger(Swarm.class);
@@ -52,10 +53,11 @@ public class PSOSwarm {
      * @param epochs        the number of iterates
      * @param rtable 
      * @param bestNode isn't need!? > cal time can be just use prams in rtable. 
+     * @param mapRTable 
      */
-    public PSOSwarm (int particles, int epochs, int nodes, int workLoad, PSOVector currentWorkload, Node bestNode, List<RTable> rtable) {
+    public PSOSwarm (int particles, int epochs, int nodes, int workLoad, PSOVector currentWorkload, Node bestNode, List<RTable> rtable, HashMap<Integer, List<RTable>> mapRTable) {
         this(particles, epochs, nodes, INERTIA_MAX, INERTIA_MIN, DEFAULT_COGNITIVE, DEFAULT_SOCIAL,
-        																workLoad, currentWorkload, bestNode, rtable);
+        																workLoad, currentWorkload, bestNode, rtable,mapRTable);
     }
 
     
@@ -66,10 +68,11 @@ public class PSOSwarm {
      * @param inertia       the particles resistance to change
      * @param cognitive     the cognitive component or introversion of the particle
      * @param social        the social component or extroversion of the particle
+     * @param mapRTable2 
      */
     public PSOSwarm (int particles, int epochs,int nodes, double inertia_max, double inertia_min, 
     													double cognitive, double social,
-    													int workLoad, PSOVector currentWorkload, Node bestNode, List<RTable> rtable) {
+    													int workLoad, PSOVector currentWorkload, Node bestNode, List<RTable> rtable, HashMap<Integer, List<RTable>> mapRTable) {
     	
     	this.bestNode = bestNode;
         this.numOfParticles = particles;
@@ -82,6 +85,7 @@ public class PSOSwarm {
         this.workLoad = workLoad;
         this.currentWorkload = currentWorkload;
         this.rtable=rtable;
+        this.mapRTable = mapRTable;
         bestPosition = new PSOVector(nodes);
         double[] initialBestPosition = new double[nodes];
         Arrays.fill(initialBestPosition, INFINITY);
@@ -101,22 +105,22 @@ public class PSOSwarm {
 
         double oldEval = bestEval;
         System.out.println("--------------------------EXECUTING-------------------------");
-    //    System.out.println("Global Best Evaluation (Epoch " + 0 + "):\t"  + bestEval);
-   //     System.out.println("---------------------------------------------------------------");
+//        System.out.println("Global Best Evaluation (Epoch " + 0 + "):\t"  + bestEval);
+//        System.out.println("---------------------------------------------------------------");
         for (int i = 0; i < epochs; i++) {
         	//update inertia 
         	double inertia = inertia_max - (((inertia_max - inertia_min)*(i+1)) / epochs);
 
             if (bestEval < oldEval) {
-     //      	System.out.println("---------------------------------------------------------------");
-     //           System.out.println("Global Best Evaluation (Epoch " + (i + 1) + "):\t" + bestEval);
+//            	System.out.println("---------------------------------------------------------------");
+//                System.out.println("Global Best Evaluation (Epoch " + (i + 1) + "):\t" + bestEval);
                 oldEval = bestEval;
             }
 
             for (PSOParticle p : particles) {
             //	System.out.println(" >>>>>> DEBUG eval: " + i + " " + p.getPosition().toStringOutput());
             	double eval = eval(p);
-           // 	if (eval!=INFINITY) System.out.println("Epoch " + (i + 1) + " " + eval);
+          //  	if (eval!=INFINITY) System.out.println("Epoch " + (i + 1) + " " + eval);
                 p.updatePersonalBest(eval);
                 updateGlobalBest(p);
             }
@@ -129,7 +133,7 @@ public class PSOSwarm {
         }
 
         
-        PSOParticle bestParticle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"bestParticle", nodes);
+        PSOParticle bestParticle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"bestParticle", nodes,mapRTable);
         bestParticle.setPosition(bestPosition);
         Map<Integer, Double> map = mappingRatio(bestParticle, workLoad);
        // System.out.println("---------------------------COMPLETE-------------------------");
@@ -146,10 +150,12 @@ public class PSOSwarm {
         for (int i = 0; i < numOfParticles; i++) {
         	//System.out.println("---------------------init");
         	
-            PSOParticle particle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"p"+i, nodes);
+        	
+			
+            PSOParticle particle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"p"+i, nodes,mapRTable);
            // System.out.println("particle: " + particle.getPosition().toStringOutput());
             //double initialEval =  model.multiFunction(particle, workLoad, currentWorkload,bestNode,rtable).getSum();
-            double initialEval =  model.multiFunction(particle, workLoad, currentWorkload,bestNode,rtable).getBiggestResult();
+            double initialEval =  model.multiFunction(particle, workLoad, currentWorkload,bestNode,rtable,mapRTable).getBiggestResult();
             particle.updatePersonalBest(initialEval);;
             //Checked sum = 100 
             particles[i] = particle;
@@ -160,11 +166,11 @@ public class PSOSwarm {
     
     private double eval(PSOParticle p){
     	//double eval = model.multiFunction(p, workLoad, currentWorkload,bestNode,rtable).getSum();
-    	double eval = model.multiFunction(p, workLoad, currentWorkload,bestNode,rtable).getBiggestResult(); // tmax 
+    	double eval = model.multiFunction(p, workLoad, currentWorkload,bestNode,rtable,mapRTable).getBiggestResult(); // tmax 
     	 
-    	if(PSOFunction.constraintF1(p)) {
+    	if(PSOFunction.constraintF1(p,mapRTable)) {
     		eval = INFINITY;
-    		//System.out.println("Contrains 1");
+    		System.out.println("Contrains 1");
     	}
     		
     	

@@ -2,6 +2,7 @@ package PSOSim;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import multihop.Constants;
@@ -24,7 +25,7 @@ class PSOFunction {
 	 */
 
 	public PSOVector multiFunction(PSOParticle p, int workLoad, PSOVector currentWorkload, Node bestNode,
-			List<RTable> rtable) {
+			List<RTable> rtable, HashMap<Integer, List<RTable>> mapRTable) {
 		/**
 		 * @param workLoad        number of images from 1 service
 		 * @param p               percent workload
@@ -33,27 +34,9 @@ class PSOFunction {
 		 * @return total time
 		 */
 
-		// System.out.println(" >>>>>> DEBUG multiFunction: " +
-		// p.getPosition().toStringOutput());
-		PSOVector position = p.getPosition().clone();
-		// Vector p_temp = position.clone(); // for 2nd part
+		PSOVector position = p.getPosition().clone(); // time
 
-		PSOVector Theta = new PSOVector(nodes);
-		for (int i = 0; i < position.getVectorCoordinate().length; i++) {
-			if (position.getById(i) != 0) {
-				Theta.setById(i, workLoad);
-			}
-		}
-
-		PSOVector worker = p.getPosition().getVectorRatio(); // get ratio
-		PSOVector worker_temp = worker.clone();
-		PSOVector workerCWL = currentWorkload.getVectorRatio(); // Worker current Workload
-
-		double[] coef = new double[nodes]; // workers = nodes ... ignore Man
-
-		worker_temp.mul(workLoad * 0.033);
-
-		worker_temp.add(coef);
+		PSOVector worker = p.getPosition().getVectorRatio(); // ratio
 
 		// calcTimeSerMulti(rtable, position, worker, workLoad);
 		// TODO position is time_server, rtable is list of node including virtual node
@@ -65,15 +48,10 @@ class PSOFunction {
 //		4 W2 Man 1
 //		5 W4 W2 2
 //		6 W5 W2 2
-		// position.setById(0, worker.getById(0) * workLoad /
-		// rtable.get(0).getResource());
 
-		// System.out.println("DEBUG p of worker: " + worker.toStringOutput());
 		double CWL = 0;
 		List<String> check = new ArrayList<String>();
-		
-		
-		
+
 		// calc t_compute
 		for (RTable r : rtable) {
 			double t_compute = 0;
@@ -82,99 +60,51 @@ class PSOFunction {
 			t_compute = totalWL / r.getResource();
 
 			if (!check.contains(r.getDes())) {
-				if (r.getNpath() > 1) {
+				//if (r.getNpath() > 1) {
 
 					List<Integer> r2Id = new ArrayList<Integer>();
 					for (RTable r2 : rtable) {
-						if ((r2.getDes() == r.getDes()) && (r2.getId() != r.getId())) {
+						if ((r2.getDes() == r.getDes())
+								&& (r2.getId() != r.getId() || (r2.getReq().getId() != r.getReq().getId()))) {
 							r2Id.add(r2.getId());
 							t_compute += worker.getById(r2.getId()) * workLoad / r2.getResource();
-						
+
 						}
 					}
-	
-					r.setTimeCompute(t_compute);
+
+					//r.setTimeCompute(t_compute);
 					for (Integer i : r2Id) {
 						rtable.get(i).setTimeCompute(t_compute);
 					}
-				}
+				//}
 				r.setTimeCompute(t_compute);
-				
-				CWL+=r.getcWL();
+
+				CWL += r.getcWL();
 
 			}
 			check.add(r.getDes());
 
-
 		}
-		
-		
-		
+
 		// Adding trans:
 		for (RTable r : rtable) {
 			double t_trans;
-			
+
 			t_trans = (worker.getById(r.getId()) * workLoad / Constants.BW) * r.getHop();
-			if (r.getId() == 0) t_trans = 0;
-			
+			if (r.getId() == 0)
+				t_trans = 0;
+
 			r.setTimeTrans(t_trans);
-			position.setById(r.getId(),  r.getTimeTrans() + r.getTimeCompute());
+			position.setById(r.getId(), r.getTimeTrans() + r.getTimeCompute());
 
 		}
-		
-		//System.out.println("CHECK: " + (rtable.get(7).getTimeCompute()-rtable.get(9).getTimeCompute()));
 
-//		for (RTable r : rtable) {
-//			double t_compute = 0;
-//			double t_trans;
-//			double subWL = worker.getById(r.getId()) * workLoad; // new WL
-//			double totalWL = subWL + r.getcWL(); // adding cWL
-//			t_compute = totalWL / r.getResource();
-//			CWL += r.getcWL();
-//			if (r.getNpath() > 1) {
-//				// process with r.getDes()
-//				for (RTable r2 : rtable) {
-//
-//					if ((r2.getDes() == r.getDes()) && (r2.getId() != r.getId())) {
-//						
-//						if((r.getId()==7)||(r.getId()==9)) {
-//							//System.out.println("Adding: " + r2.getId() +  " " + (t_compute-rtable.get(7).getTimeCompute()));
-//							//System.out.println("t1: " + t_compute +  " t2:" + worker.getById(r2.getId()) * workLoad / r2.getResource() + " totalWL:" + totalWL);
-//
-//						}
-//						
-//
-//						
-//						t_compute += worker.getById(r2.getId()) * workLoad / r2.getResource();
-//						// System.out.println(" >>>>>> DEBUG multiFunction: " + " " + workLoad + " " +
-//						// r.getId() + " " + r2.getId() + " " + worker.getById(r2.getId()));
-//						
-//						
-//						if((r.getId()==7)||(r.getId()==9)) {
-//							System.out.println("Adding: " + r2.getId() +  " " + (t_compute-rtable.get(7).getTimeCompute()));
-//						}
-//				
-//					}
-//				}
-//			}
-//			
-//			
-//			//System.out.println("check: " + r.getId() + " "+  (t_compute-r.getTimeCompute()));
-//
-//			t_trans = (worker.getById(r.getId()) * workLoad / Constants.BW) * r.getHop();
-//
-//			if (r.getId() == 0) {
-//				t_trans = 0;
-//			}
-//			;
-//			position.setById(r.getId(), t_trans + t_compute);
-//
-//		}
-		constraintF3(workLoad, currentWorkload, position, CWL);
-		constraintF4(workLoad, position,CWL);
-
-		// System.out.println(" >>>>>> DEBUG multiFunction: " +
-		// position.toStringOutput());
+		int totalworkLoad=0;
+		for (Integer id : mapRTable.keySet()) {
+			totalworkLoad+=mapRTable.get(id).get(0).getReq().getWL();
+		}
+		constraintF3(totalworkLoad, currentWorkload, position, CWL);
+		constraintF4(totalworkLoad, position, CWL);
 
 		return position;
 
@@ -350,14 +280,51 @@ class PSOFunction {
 	/**
 	 * Sum pi = 1
 	 * 
-	 * @param p particle
+	 * @param p         particle
+	 * @param mapRTable
 	 * @return true if not satisfy
 	 */
-	static boolean constraintF1(PSOParticle p) {
-		if (p.getPosition().getSum() != 1.0) {
-			// System.out.println("F1 = true");
-			return true;
+	static boolean constraintF1(PSOParticle p, HashMap<Integer, List<RTable>> mapRTable) {
+		// System.out.println(p.getPosition().toStringOutput());
+		int j = 0;
+		int fix = 0;
+		for (Integer id : mapRTable.keySet()) {
+			double checkSum = 0;
+
+			List<RTable> rTable = mapRTable.get(id);
+
+			for (int i = 0; i < rTable.size(); i++) {
+				// System.out.println(p.getPosition().getById(j));
+				checkSum += p.getPosition().getById(j);
+				j++;
+			}
+
+			if (checkSum != 1.0) {
+				// double delta = p.getPosition().getById(j-1)+1-checkSum;
+
+				double d1 = (1 - checkSum) / rTable.size();
+				double d2 = 0;
+
+				for (int i = 0; i < rTable.size(); i++) {
+					d2 = p.getPosition().getById(fix) + d1;
+					p.getPosition().setById(fix, d2);
+
+					fix++;
+				}
+
+			}
+			if (fix != j) {
+				fix = j;
+			}
+			;
+
 		}
+//		
+//		
+//		if (p.getPosition().getSum() != 1.0) {
+//			// System.out.println("F1 = true");
+//			return true;
+//		}
 		return false;
 	}
 
@@ -406,11 +373,11 @@ class PSOFunction {
 	 * @param workLoad
 	 * @return
 	 */
-	static PSOVector constraintF4(int workLoad, PSOVector postion,double cWL) {
+	static PSOVector constraintF4(int workLoad, PSOVector postion, double cWL) {
 		boolean check = true;
-		
-		double averageWorkload = (workLoad+cWL) / postion.getVectorCoordinate().length;
-		double a=averageWorkload/10;
+
+		double averageWorkload = (workLoad + cWL) / postion.getVectorCoordinate().length;
+		double a = averageWorkload / 10;
 		for (int i = 0; i < postion.getVectorCoordinate().length; i++) {
 			double pen = (postion.getById(i) - a) / workLoad;
 			if (pen < 0)
