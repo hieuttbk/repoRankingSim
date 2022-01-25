@@ -118,7 +118,7 @@ public class PSOSwarm {
             }
 
             for (PSOParticle p : particles) {
-            //	System.out.println(" >>>>>> DEBUG eval: " + i + " " + p.getPosition().toStringOutput());
+            	//System.out.println(" >>>>>> DEBUG eval: " + i + " " + p.getPosition().toStringOutput());
             	double eval = eval(p);
           //  	if (eval!=INFINITY) System.out.println("Epoch " + (i + 1) + " " + eval);
                 p.updatePersonalBest(eval);
@@ -153,12 +153,13 @@ public class PSOSwarm {
         	
 			
             PSOParticle particle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"p"+i, nodes,mapRTable);
-           // System.out.println("particle: " + particle.getPosition().toStringOutput());
+            //System.out.println("particle: " + particle.getPosition().toStringOutput());
             //double initialEval =  model.multiFunction(particle, workLoad, currentWorkload,bestNode,rtable).getSum();
             double initialEval =  model.multiFunction(particle, workLoad, currentWorkload,bestNode,rtable,mapRTable).getBiggestResult();
             particle.updatePersonalBest(initialEval);;
             //Checked sum = 100 
             particles[i] = particle;
+           // System.out.println("particle: " + particle.getPosition().toStringOutput());
             updateGlobalBest(particle);
         }
         return particles;
@@ -166,11 +167,12 @@ public class PSOSwarm {
     
     private double eval(PSOParticle p){
     	//double eval = model.multiFunction(p, workLoad, currentWorkload,bestNode,rtable).getSum();
+    	//System.out.println("particle: " + p.getPosition().toStringOutput());
     	double eval = model.multiFunction(p, workLoad, currentWorkload,bestNode,rtable,mapRTable).getBiggestResult(); // tmax 
     	 
     	if(PSOFunction.constraintF1(p,mapRTable)) {
     		eval = INFINITY;
-    		System.out.println("Contrains 1");
+    		//System.out.println("Contrains 1");
     	}
     		
     	

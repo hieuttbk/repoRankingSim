@@ -67,21 +67,6 @@ public class MultiReq2 {
 				System.out.println(" >at: " + i + " " + rtable.get(i).toString());
 			}
 
-			// System.out.println("\nTest HashMap: ");
-			// mapRTable.forEach((k,v)->{System.out.println("req " + k + " " + v);});
-
-			// System.out.println("\nWORKLOAD= " + WL +" | REQ= " + reqId);
-			// myWriterPSO.write("req"+reqId+"\n");
-
-			// update new req_node
-			// int idNodeReq = topo.size() + 1;
-			// Node req = new Node(idNodeReq, "REQ" + reqId, 1+10*reqId, 1+10*reqId);
-			// req.setRes(Constants.RES);
-
-			// updateTopo(topo, req);
-
-			// create topo for the req_node
-			// rtable = createRoutingTable(topo, rtable, req);
 
 			Node bestNode = topo.get(0); // choose node to process, (only effective with gain-alg)
 
@@ -110,7 +95,7 @@ public class MultiReq2 {
 							&& (r2.getId() != r.getId() || (r2.getReq().getId() != r.getReq().getId()))) {
 						compute += r2.getRatio() * workLoad / r2.getResource(); // adding time(newWL) route2
 						subWL += r2.getRatio() * workLoad; // adding newWL route2
-						System.out.println("DEBUG " + r.getDes() + " " + r.getRoute() + " adding: " + r2.getRoute());
+					//	System.out.println("DEBUG " + r.getDes() + " " + r.getRoute() + " adding: " + r2.getRoute());
 					}
 				}
 				// }
