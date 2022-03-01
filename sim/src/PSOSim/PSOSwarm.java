@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
 
 import multihop.Node;
 import multihop.RTable;
@@ -34,10 +33,10 @@ public class PSOSwarm {
     private static PSOFunction model;
     private PSOVector bestPosition;
     private double bestEval;
-    public static final double INERTIA_MAX = 0.9;
-    public static final double INERTIA_MIN = 0.4;
-    public static final double DEFAULT_COGNITIVE = 1; // Cognitive component.
-    public static final double DEFAULT_SOCIAL = 1.05; // Social component.
+    public static final double INERTIA_MAX = 0.9; // 0.9
+    public static final double INERTIA_MIN = 0.4; // 0.4
+    public static final double DEFAULT_COGNITIVE = 1.05; // Cognitive component.
+    public static final double DEFAULT_SOCIAL = 1.05; // Social component. // 1.05
     
     public static final double INFINITY = Double.POSITIVE_INFINITY;
     
@@ -104,23 +103,23 @@ public class PSOSwarm {
         PSOParticle[] particles = initialize();
 
         double oldEval = bestEval;
-        System.out.println("--------------------------EXECUTING-------------------------");
-//        System.out.println("Global Best Evaluation (Epoch " + 0 + "):\t"  + bestEval);
-//        System.out.println("---------------------------------------------------------------");
+       // System.out.println("--------------------------EXECUTING-------------------------");
+      //  System.out.println("Global Best Evaluation (Epoch " + 0 + "):\t"  + bestEval);
+      //  System.out.println("---------------------------------------------------------------");
         for (int i = 0; i < epochs; i++) {
         	//update inertia 
         	double inertia = inertia_max - (((inertia_max - inertia_min)*(i+1)) / epochs);
 
             if (bestEval < oldEval) {
-//            	System.out.println("---------------------------------------------------------------");
-//                System.out.println("Global Best Evaluation (Epoch " + (i + 1) + "):\t" + bestEval);
+          //  	System.out.println("---------------------------------------------------------------");
+          //      System.out.println("Global Best Evaluation (Epoch " + (i + 1) + "):\t" + bestEval);
                 oldEval = bestEval;
             }
 
             for (PSOParticle p : particles) {
             	//System.out.println(" >>>>>> DEBUG eval: " + i + " " + p.getPosition().toStringOutput());
             	double eval = eval(p);
-          //  	if (eval!=INFINITY) System.out.println("Epoch " + (i + 1) + " " + eval);
+       //     	if (eval!=INFINITY) System.out.println("Epoch " + (i + 1) + " " + eval);
                 p.updatePersonalBest(eval);
                 updateGlobalBest(p);
             }
@@ -133,7 +132,7 @@ public class PSOSwarm {
         }
 
         
-        PSOParticle bestParticle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"bestParticle", nodes,mapRTable);
+        PSOParticle bestParticle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"bestParticle", nodes,mapRTable,rtable);
         bestParticle.setPosition(bestPosition);
         Map<Integer, Double> map = mappingRatio(bestParticle, workLoad);
        // System.out.println("---------------------------COMPLETE-------------------------");
@@ -152,7 +151,7 @@ public class PSOSwarm {
         	
         	
 			
-            PSOParticle particle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"p"+i, nodes,mapRTable);
+            PSOParticle particle = new PSOParticle(PSOSim.PSOParticle.FunctionType.A,"p"+i, nodes,mapRTable,rtable);
             //System.out.println("particle: " + particle.getPosition().toStringOutput());
             //double initialEval =  model.multiFunction(particle, workLoad, currentWorkload,bestNode,rtable).getSum();
             double initialEval =  model.multiFunction(particle, workLoad, currentWorkload,bestNode,rtable,mapRTable).getBiggestResult();
@@ -207,6 +206,7 @@ public class PSOSwarm {
         if (particle.getBestEval() < bestEval) {
             bestPosition = particle.getBestPosition();
             bestEval = particle.getBestEval();
+        //    System.out.println("==> Global Best at " + particle.getName() + " is: " +bestEval + "\n" + bestPosition.toStringOutput());
         }
     }
 
@@ -246,7 +246,7 @@ public class PSOSwarm {
     private static Map<Integer, Double> mappingRatio (PSOParticle bestParticle, int workLoad){
     	Map<Integer, Double> workLoadRatio = new HashMap<Integer, Double>();
     	PSOVector result_workload = bestParticle.getPosition(); //cloning
-    	result_workload.mul(workLoad);
+    	//result_workload.mul(workLoad);
     	double[] ratio = result_workload.getVectorCoordinate();
     	
     	

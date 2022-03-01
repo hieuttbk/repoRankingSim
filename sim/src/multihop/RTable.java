@@ -12,6 +12,7 @@ public class RTable {
 	int npath;
 	double cWL;
 	RequestPSO req;
+	double timeSer;
 	
 	/**
 	 * @param des is node destination
@@ -39,6 +40,17 @@ public class RTable {
 		this.resource=resource;
 		this.cWL=0;
 		this.req=req;
+	}
+
+	
+
+	public double getTimeSer() {
+		return timeSer;
+	}
+
+
+	public void setTimeSer(double timeSer) {
+		this.timeSer = timeSer;
 	}
 
 
@@ -122,8 +134,10 @@ public class RTable {
 		this.resource = resource;
 	}
 	public String toString() {
-		String rtable = "id: " + id + " des:" + des + " route:" + route + " hop:" + hop + " npath:" + npath 
-				+ " timeC:" + timeCompute + " timeT:" + timeTrans + " cWL:" + cWL + " req:" + req.getId();
+		String rtable = "id: " + id + " req:" + req.getId() + " src:" + req.getSrcNode().getName() + " des:" + des + " route:" + route + " p:" + ratio 
+				+ " tComp:" + timeCompute + " tTrans:" + timeTrans + " tSer: " + (timeCompute+timeTrans)
+				+ " hop:" + hop + " npath:" + npath 
+				+ " cWL:" + cWL;
 		
 		return rtable;
 	}

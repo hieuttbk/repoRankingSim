@@ -1,7 +1,11 @@
 package multihop;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Vector;
 
 public class Node {
@@ -13,11 +17,16 @@ public class Node {
 	double res;
 	double gain;
 	double WL=0;
+	double cWL=0;
 	
 	double rank;
 	double rankCluster;
 	
 	Node parent;
+	
+	RequestPSO req;
+
+	
 	
 	int RANGE = Constants.RANGE;
 	
@@ -31,9 +40,63 @@ public class Node {
 	
 	Map<Integer,Double> rankMap =  new HashMap<Integer,Double>();
 	
+	List<RequestPSO> listReq = new ArrayList<RequestPSO>();
+	
+	Queue<RequestPSO> qReq = new PriorityQueue<RequestPSO>();
+	
+	List<RequestPSO> doneReq = new ArrayList<RequestPSO>();
 	
 	
-	
+	public List<RequestPSO> getDoneReq() {
+		return doneReq;
+	}
+
+
+	public void setDoneReq(List<RequestPSO> doneReq) {
+		this.doneReq = doneReq;
+	}
+
+
+	public Queue<RequestPSO> getqReq() {
+		return qReq;
+	}
+
+
+	public void setqReq(Queue<RequestPSO> qReq) {
+		this.qReq = qReq;
+	}
+
+
+	public List<RequestPSO> getListReq() {
+		return listReq;
+	}
+
+
+	public void setListReq(List<RequestPSO> listReq) {
+		this.listReq = listReq;
+	}
+
+
+	public RequestPSO getReq() {
+		return req;
+	}
+
+
+	public void setReq(RequestPSO req) {
+		this.req = req;
+	}
+
+
+	public double getcWL() {
+		return cWL;
+	}
+
+
+	public void setcWL(double cWL) {
+		this.cWL = cWL;
+	}
+
+
 	public Vector<Node> getNodeCluster() {
 		return nodeCluster;
 	}

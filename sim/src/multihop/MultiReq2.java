@@ -3,10 +3,17 @@ package multihop;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collector;
 
 import PSOSim.PSOSwarm;
 import PSOSim.PSOVector;
@@ -16,207 +23,440 @@ public class MultiReq2 {
 	public static void main(String[] args) throws IOException {
 
 		/**
-		 * ------------------------------- Init node -------------------------------
+		 * ------------------------------- Prams-------------------------------
 		 **/
-
-		// TODO:
-		// Create initTopo(m, n) > return topo[].
+		//case
+		boolean single;
+		
+		// topo
 		int _m = 5;
 		int _n = 5;
 		int len = _m * _n;
 
-		List<Node> topo = new ArrayList<Node>();
-		topo = createTopo(_m, _n);
-
-		// create grid topo m*n nodes
-		setupTopo(topo);
-
+		// logging
 		FileWriter myWriterPSO;
-		myWriterPSO = new FileWriter("topoPSO.txt");
-		myWriterPSO.write("PSO: " + "Number Of Paritcles = " + Constants.particles + "| Epchos = " + Constants.epchos);
-		myWriterPSO.write("\n" + "WL\t" + "desNode\t" + "path\t" + "new_Workload\t" + "timeCompute\t" + "timeTrans\t"
-				+ "timeServ\t" + "curr_Workload\t" + "reqID\t" + "\n");
+		FileWriter myWriterPSOserv;
+		FileWriter myWriterPSOtraff;
+		myWriterPSO = new FileWriter("topoPSO"+Constants.testcase+".txt");
+		myWriterPSOserv = new FileWriter("topoPSO_tserv"+ Constants.testcase +".txt");
+		myWriterPSOtraff = new FileWriter("topoPSO_traff.txt");
 
-		int WL = 100;
+		// request
+		int WL = (int) (len * Constants.lambda * Constants.tlambda); // 20reqs/s/node
+		int numREQ = Constants.NUM_REQ;
+		Queue<RequestPSO> req = new PriorityQueue<RequestPSO>();
 
-		for (int w = 1; w <= 1; w++) {
-			WL = 500 * w;
-			int numREQ = 4;
-			// WL = 500;
-			myWriterPSO.write("\n");
-			// System.out.println("\nWORKLOAD= " + WL);
-			HashMap<Integer, List<RTable>> mapRTable = new HashMap<Integer, List<RTable>>();
-			List<RTable> rtable = new ArrayList<RTable>();
-			List<Node> listNodeReq = new ArrayList<Node>();
+		Random generator = new Random(); // random number REQ
+		// int id = generator.nextInt(24);
 
-			for (int reqId = 1; reqId <= numREQ; reqId++) {
-				listNodeReq.add(topo.get(reqId * 6));
-			}
+		for (int hc = Constants.MAXHOP; hc <= Constants.MAXHOP; hc++) { // for hopcount
+			// logging
+//			myWriterPSOtraff.write("HopCount = " + hc + " | WL = " + WL + " | t_reqs= " + Constants.tlambda + " | lambda= "
+//					+ Constants.lambda);
 
-			// create RTable for multi reqs
-			for (int reqId = 1; reqId <= numREQ; reqId++) {
-				List<RTable> rtableREQ = new ArrayList<RTable>();
-				Node reqNode = topo.get(reqId * 6);
-				rtableREQ = createRoutingTable(topo, rtableREQ, new RequestPSO(reqId, WL, reqNode), listNodeReq);
-				rtable.addAll(rtableREQ);
-				mapRTable.put(reqId, rtableREQ);
-			}
+//			myWriterPSO.write("\n" + "WL\t" + "reqID\t" + "desNode\t" + "path\t" + "ration\t" + "timeTrans"
+//					+ "timeServ\t" + "\n");
 
-			System.out.println("\nRTable merged: ");
-			for (int i = 0; i < rtable.size(); i++) {
-				System.out.println(" >at: " + i + " " + rtable.get(i).toString());
-			}
+			/**
+			 * --- 1.Create topo m*n ---
+			 */
+			List<Node> topo = new ArrayList<Node>();
+			topo = createTopo(_m, _n);
+			setupTopo(topo);
 
-
-			Node bestNode = topo.get(0); // choose node to process, (only effective with gain-alg)
-
-			System.out.println("\n***********PSO Running***********\n");
-
-			HashMap<Integer, Double> resultPSO = getPSO(WL, bestNode, rtable, mapRTable); // estimate pi for node i
-
-			Set<Integer> rID = resultPSO.keySet();
-			for (Integer id : rID) {
-				rtable.get(id).setRatio(resultPSO.get(id) / rtable.get(id).getReq().getWL());
-			}
-
-			// duplicate calc t_ base ration
-			for (RTable r : rtable) {
-				double compute = 0;
-				double trans;
-				double workLoad = WL;
-				double subWL = r.getRatio() * workLoad; // new WL
-				// System.out.println("0_Adding: " + r.getDes() + " " + subWL);
-				double totalWL = subWL + r.getcWL(); // adding cWL
-				compute = totalWL / r.getResource(); // totalTime
-
-				// if (r.getNpath() > 1) { // if Multi rout to node r
-				for (RTable r2 : rtable) {
-					if ((r2.getDes() == r.getDes())
-							&& (r2.getId() != r.getId() || (r2.getReq().getId() != r.getReq().getId()))) {
-						compute += r2.getRatio() * workLoad / r2.getResource(); // adding time(newWL) route2
-						subWL += r2.getRatio() * workLoad; // adding newWL route2
-					//	System.out.println("DEBUG " + r.getDes() + " " + r.getRoute() + " adding: " + r2.getRoute());
-					}
-				}
-				// }
-
-				// System.out.println("1_Current: " + r.getDes() + " " + r.getcWL());
-				subWL += r.getcWL();
-
-				trans = (r.getRatio() * workLoad / Constants.BW) * r.getHop();
-
-				if (r.getId() == 0) {
-					trans = 0;
-				}
-				;
-
-				for (Node t : topo) {
-					if (t.getName().equals(r.getDes())) {
-						// System.out.println("2_Node: " + t.getName() + " " + subWL);
-						t.setWL(subWL);
-					}
-				}
-
-				r.setTimeCompute(compute);
-				r.setTimeTrans(trans);
-				double ser = compute + trans;
-				myWriterPSO.write(WL + " \t " + r.getDes() + " \t " + r.getRoute() + " \t " + r.getRatio() * WL + " \t "
-						+ r.getTimeCompute() + " \t " + r.getTimeTrans() + " \t" + ser + "\t" + r.getcWL() + "\t"
-						+ r.getReq().getId() + "\n");
-
-			} // END LOG TIME IN RTABLE
-
-			System.out.println("RESULT: ");
-
-			rtable.forEach((re) -> {
-				System.out.println(">" + re.toString());
-
-			});
-
-//			System.out.println("\ncheck Topo: ");
-//			topo.forEach((t) -> {
-//				System.out.println(">" + t.getName() + " " +  t.getWL());
+			/**
+			 * --- 2. Create N requests --- id workload request node time_start=time_arrival
+			 */
+//		//	int[] fixedNode = new int[1000];
+//			int[] fixedNode = Constants.node;
+//		//	int[] fixedNode = { 4, 1, 22, 19, 3, 1, 9, 20, 11, 5 };
+//			double []dT = Constants.DT;
+//			int []data = {50,100,150,100,150,50,100,50,150,100};
+//			myWriterPSOtraff.write("\n List REQ: \n" + "id\t" + "srcNode\t" + "timeArrival\t" + "workLoad\t"
+//			 + "\n");
+//			double reqTime = 0;
+//			for (int i = 1; i <= Constants.NUM_REQ; i++) {
+//				int idNode = fixedNode[i-1];
+//				// fixed
+//				//idNode = fixedNode[i - 1];
+//				int wl= data[(i-1)%10];
+//				int idReq = i;
+//				req.add(new RequestPSO(idReq, wl, topo.get(idNode), reqTime, reqTime));
 //
-//			});
+//				// log list-req
+//				myWriterPSOtraff.write(i + "\t" + idNode + "\t" +reqTime + "\t" + wl + "\n");
+//
+//				reqTime += dT[i-1];
+//				//fixedNode[i-1]=idNode;
+//			}
+			
+			// gen REQ 1/3
+			int []data= {24,30,60};
+			//int []fixedNode = {9,15};
+			//int []fixedNode = {1,4,7,15,18,20};
+			int []fixedNode = {1,3,5,7,9,12,14,16,18,19,21,23};
+			double []dT = Constants.DT;
+			myWriterPSOtraff.write("\n List REQ: \n" + "id\t" + "srcNode\t" + "timeArrival\t" + "workLoad\t"
+					 + "\n");
+			double reqTime = 0;
+			int idReq=1;
+			for (int n=0; n<fixedNode.length;n++) {
+				//reqTime=Constants.ST[n];
+				int idNode = fixedNode[n];
+				for(int i=1;i<=dT.length;i++) {
+					int wl= data[2];
+					req.add(new RequestPSO(idReq, wl, topo.get(idNode), reqTime, reqTime));
+					myWriterPSOtraff.write(idReq + "\t" + idNode + "\t" +reqTime + "\t" + wl + "\n");
+					reqTime += 1;
+					idReq++;
+				}
+			}
+			
+			
+			
+			//System.out.println(Arrays.toString(fixedNode));
+			// req.add(new RequestPSO(1,500,topo.get(0),0.5));
+			// req.add(new RequestPSO(2,500,topo.get(0),2.5));
 
-			System.out.println("Proportion PSO " + bestNode.getName() + " " + resultPSO);
-		}
+			/**
+			 * Loop ts: 0 -- ts_1 -- ts_1+TS
+			 */
+			int TS = Constants.TS;
+			final int nTS = Constants.TSIM;
+			myWriterPSOtraff.write("\nTS=" + TS + " | nTS=" + nTS);
+			myWriterPSOtraff.write("\nTS\tListReqs" + "\n");
 
-		/*
-		 * for(int reqId=1; reqId<=2;reqId++) {
-		 * 
-		 * System.out.println("\nWORKLOAD= " + WL +" | REQ= " + reqId);
-		 * myWriterPSO.write("req"+reqId+"\n");
-		 * 
-		 * // update new req_node //int idNodeReq = topo.size() + 1; //Node req = new
-		 * Node(idNodeReq, "REQ" + reqId, 1+10*reqId, 1+10*reqId);
-		 * //req.setRes(Constants.RES);
-		 * 
-		 * //updateTopo(topo, req);
-		 * 
-		 * // create topo for the req_node rtable = createRoutingTable(topo, rtable,
-		 * req);
-		 * 
-		 * Node bestNode = req; // choose node to process, (only effective with
-		 * gain-alg)
-		 * 
-		 * System.out.println("\n***********PSO Running***********\n");
-		 * 
-		 * 
-		 * 
-		 * HashMap<Integer, Double> resultPSO = getPSO(WL, bestNode, rtable); //
-		 * estimate pi for node i
-		 * 
-		 * Set<Integer> rID = resultPSO.keySet(); for (Integer id : rID) {
-		 * rtable.get(id).setRatio(resultPSO.get(id) / WL); }
-		 * 
-		 * 
-		 * 
-		 * // duplicate calc t_ base ration for (RTable r : rtable) { double compute =
-		 * 0; double trans; double workLoad = WL; double subWL= r.getRatio() * workLoad;
-		 * // new WL //System.out.println("0_Adding: " + r.getDes() + " " + subWL);
-		 * double totalWL = subWL + r.getcWL(); // adding cWL compute = totalWL/
-		 * r.getResource(); // totalTime
-		 * 
-		 * if (r.getNpath() > 1) { // if Multi rout to node r for (RTable r2 : rtable) {
-		 * if ((r2.getDes() == r.getDes()) && (r2.getId() != r.getId())) { compute +=
-		 * r2.getRatio() * workLoad / r2.getResource(); // adding time(newWL) route2
-		 * subWL+=r2.getRatio() * workLoad; // adding newWL route2 } } }
-		 * 
-		 * //System.out.println("1_Current: " + r.getDes() + " " + r.getcWL());
-		 * subWL+=r.getcWL();
-		 * 
-		 * trans = (r.getRatio() * workLoad / Constants.BW) * r.getHop();
-		 * 
-		 * if (r.getId() == 0) { trans = 0; } ;
-		 * 
-		 * 
-		 * for (Node t:topo) { if(t.getName().equals(r.getDes())) {
-		 * //System.out.println("2_Node: " + t.getName() + " " + subWL); t.setWL(subWL);
-		 * } }
-		 * 
-		 * r.setTimeCompute(compute); r.setTimeTrans(trans); double ser = compute +
-		 * trans; myWriterPSO.write(WL + " \t " + r.getDes() + " \t " + r.getRoute() +
-		 * " \t " + r.getRatio() * WL + " \t " + r.getTimeCompute() + " \t " +
-		 * r.getTimeTrans() + " \t" + ser + "\t" + r.getcWL()+"\n");
-		 * 
-		 * 
-		 * } // END LOG TIME IN RTABLE
-		 * 
-		 * System.out.println("RESULT: ");
-		 * 
-		 * rtable.forEach((re) -> { System.out.println(">" + re.toString());
-		 * 
-		 * });
-		 * 
-		 * // System.out.println("\ncheck Topo: "); // topo.forEach((t) -> { //
-		 * System.out.println(">" + t.getName() + " " + t.getWL()); // // });
-		 * 
-		 * System.out.println("Proportion PSO " + bestNode.getName() + " " + resultPSO);
-		 * } //END FOR REQ
-		 */
-		// END FOR WORKLOAD
+			for(int i=0;i<2;i++) {
+				single = i==0?true:false;
+				myWriterPSOserv.write("\n\nsingle = " + single + "\n");
+				for (int t = 1; t <= nTS; t++) {
+					System.out.println("\nts=" + t + " ----------------------------------------------------------");
+					double ts = TS * t;
 
+					/**
+					 * --- 1. Create routing table---
+					 */
+					HashMap<Integer, List<RTable>> mapRTable = new HashMap<Integer, List<RTable>>();
+					List<RTable> rtable = new ArrayList<RTable>();
+
+					// 1.1 adding req ts_k < start < ts_k+1
+					System.out.print("List REQs:\n ");
+					List<Node> listNodeReq = new ArrayList<Node>();
+					Queue<RequestPSO> reqTS = new PriorityQueue<RequestPSO>();
+					for (RequestPSO r : req) {
+						double start = r.getStart();
+						if ((start < ts) && (start >= (ts - TS))) {
+							listNodeReq.add(r.getSrcNode());
+							reqTS.add(r);
+							System.out.print(r.getSrcNode().getName() + "." + start + "\t");
+						}
+					}
+
+					// 1.2 updated create RTable for multi reqs
+					for (RequestPSO r : reqTS) {
+						List<RTable> rtableREQ = new ArrayList<RTable>();
+						int reqId = r.getId();
+						Node reqNode = r.getSrcNode();
+						rtableREQ = createRoutingTable(topo, rtableREQ, new RequestPSO(reqId, WL, reqNode), listNodeReq,
+								hc, single);
+						rtable.addAll(rtableREQ);
+						mapRTable.put(reqId, rtableREQ);
+					}
+
+					// 1.2 create RTable for multi reqs
+//					for (int reqId = 1; reqId <= listNodeReq.size(); reqId++) {
+//						List<RTable> rtableREQ = new ArrayList<RTable>();
+//						int id = reqId - 1;
+//						Node reqNode = listNodeReq.get(id);
+//						rtableREQ = createRoutingTable(topo, rtableREQ, new RequestPSO(reqId, WL, reqNode), listNodeReq,
+//								hc);
+//						rtable.addAll(rtableREQ);
+//						mapRTable.put(reqId, rtableREQ);
+//					}
+
+					// System.out.println(listNodeReq);
+
+					// if having req in queue
+					if (listNodeReq.size() != 0) {
+
+					//	 log list_reqs
+						myWriterPSOtraff.write(ts + "\t");
+						for(RequestPSO r:reqTS) {
+							myWriterPSOtraff.write(r.getId() + "\t");
+						}
+						myWriterPSOtraff.write("\n");
+
+						/**
+						 * --- 2. Run PSO ---
+						 */
+						System.out.println("\n***********PSO Running***********\n");
+						Node bestNode = topo.get(0); // choose node to process, (only effective with gain-alg)
+
+						HashMap<Integer, Double> resultPSO = getPSO(WL, bestNode, rtable, mapRTable); // estimate pi for
+																										// node i
+
+						Set<Integer> rID = resultPSO.keySet(); // result pso
+						for (Integer id : rID) {
+							rtable.get(id).setRatio(resultPSO.get(id));
+						}
+
+						/**
+						 * --- 3. Logging ---
+						 */
+						// 3.1 t_ser based PSO in rtable
+						for (RTable r : rtable) {
+							double compute = 0;
+							double trans = 0;
+							double workLoad = r.getReq().getWL();
+							double subWL = r.getRatio() * workLoad; // new WL
+							double totalWL = subWL + r.getcWL(); // adding cWL
+							compute = totalWL / r.getResource(); // totalTime
+
+							if(Constants.testcase!=2) {
+								// calc t_process for all paths to node ~ including t_wait
+								for (RTable r2 : rtable) {
+									if (r2.getDes().equals(r.getDes())
+											&& (r2.getId() != r.getId() || (r2.getReq().getId() != r.getReq().getId()))) {
+										compute += r2.getRatio() * r2.getReq().getWL() / r2.getResource(); // adding time(newWL) route2
+										subWL += r2.getRatio() * r2.getReq().getWL(); // adding newWL route2
+										
+									}
+								}
+							}
+						
+
+							trans = (r.getRatio() * workLoad / Constants.BW) * r.getHop();
+
+							if (r.getId() == 0) {
+								trans = 0;
+							}
+							;
+
+							r.setTimeCompute(compute);
+							r.setTimeTrans(trans);
+
+							double ser = compute + trans;
+							r.setTimeSer(ser);
+
+						} // END 3.1: LOG TIME IN RTABLE
+
+						// 3.2 t_ser in node - error bz rid and listNodeReq
+//						myWriterPSO.write("\nreqId\t" + "nodeRequest\t" + "t_serve\t" + "serve_rate\t" + "noNeigbour\t" + "\n");
+//						for (int rid = 1; rid <= Constants.NUM_REQ; rid++) {
+//							double max = 0;
+//							double wlR = 0;
+//							for (RTable r : rtable) {
+//								double sumTime = r.getTimeCompute() + r.getTimeTrans();
+//								if ((r.getReq().getId() == rid) && (sumTime > max)) {
+//									wlR = r.getReq().getWL();
+//									max = sumTime; // timetran=0
+//								//	System.out.println("REQ: " + rid + " " + max);
+//								}
+//							}
+	//
+//							myWriterPSO.write(rid + "\t" + listNodeReq.get(rid - 1).getId() + "\t" + max + "\t" + max / wlR + "\t"
+//									+ findNeighbour(topo, listNodeReq.get(rid - 1)).size() + "\t" + "\n");
+	//
+//						}
+
+						// 3.3 wl and neighbour in node
+//						HashMap<String, Integer> paths = Util.getPahts(rtable);
+//						System.out.println("PAHTS " + paths);
+//						myWriterPSO.write("\nNode\t" + "WL\t" + "noNeigbour\t" + "\n");
+	//
+//						int nnodes = 0;
+//						for (Node t1 : topo) {
+//							if (t1.getWL() != 0) {
+////								myWriterPSO.write(
+////										t.getId() + "\t" + t.getWL() / WL + "\t" + paths.get(String.valueOf(t.getId())) + "\n");
+//								myWriterPSO.write(t1.getId() + "\t" + t1.getWL() + "\t" + findNeighbour(topo, t1).size() + "\n");
+//								nnodes++;
+//							}
+//						}
+
+						// 3.4 rtable
+						System.out.println("\n----- RESULT (P_a->i)_k: | (p_src->des)_route");
+						rtable.forEach((re) -> System.out.println(">" + re.toString()));
+
+						// 3.5 logging wl sorted in node
+//						System.out.println("\n----- WL sorted in node: ");
+//						List<Node> topoSort = topo;
+//						Collections.sort(topoSort, new Comparator<Node>() {
+//							@Override
+//							public int compare(Node o1, Node o2) {
+//								return o1.getWL() < o2.getWL() ? 1 : -1;
+//							}
+//						});
+//						
+//						System.out.println("Node\t" + "npaths\t" + "WL(ratio)\t");
+//						double std = 0;
+//						for (Node t1 : topoSort) {
+//							if (t1.getWL() != 0) {
+//								std += (t1.getWL() / WL - (double) (Constants.NUM_REQ) / nnodes)
+//										* (t1.getWL() / WL - (double) (Constants.NUM_REQ) / nnodes);
+//								System.out.println(t1.getId() + "\t" + paths.get(String.valueOf(t1.getId())) + "\t" + t1.getWL() / WL);
+//							}
+//						}
+	//
+//						System.out.println("STD: " + Math.sqrt(std / nnodes));
+					}
+
+					/**
+					 * --- 4. Process CWL and queue in node ---
+					 */
+					// 4.1 calc assigned workload in node (all cWL) and adding queue
+					System.out.println("\nCALC assigned new workload and ADD new reqs to queue");
+					for (Node n : topo) {
+						double aWL = 0; // all assigned workload as new-workload
+						boolean check = false;
+						for (RTable r : rtable) {
+							if (r.getDes().equals(n.getName())) {
+								aWL += r.getRatio() * r.getReq().getWL();
+								double t_process = r.getRatio() * r.getReq().getWL() / r.getResource();
+								// adding queue
+								double start = r.getTimeTrans() + (t - 1) * TS; // the arrival task to Node, PSO at ts
+								// double start = r.getTimeTrans()+(t)*TS;
+								Node srcNode = r.getReq().getSrcNode();
+								n.getqReq()
+										.add(new RequestPSO(r.getReq().getId(), r.getReq().getWL(), n.getId(), r.getRoute(),
+												start, t_process, false, start, start + t_process, srcNode, r.getRatio(),
+												r.getTimeTrans(), r.getTimeSer()));
+								check = true;
+							}
+						}
+
+//						if (check)
+//							System.out.println("Timeslot: " + t + " Node: " + n.getName() + " aWL=" + aWL);
+						n.setcWL(n.getcWL() + aWL);
+					}
+
+					// 4.2 calc and update queue
+					System.out.println("\nUPDATE QUEUE");
+					for (Node n : topo) {
+						boolean check = true;
+						while (check && (n.getqReq().peek() != null)) {
+
+							double start1 = n.getqReq().peek().getStart();
+							double end1 = n.getqReq().peek().getEnd();
+							System.out.print("Node: " + n.getName());
+							System.out.println(" REQ: " + start1 + " -> " + end1);
+							check = false;
+							if (end1 < ts) {
+								n.getqReq().peek().setDone(true);
+								n.getDoneReq().add(n.getqReq().peek()); // adding to done req
+							//	System.out.println("doneREQ: " + n.getqReq().peek().getStart() + " -> " + end1);
+								n.getqReq().remove(); // req is done, removing
+								RequestPSO nextReq = n.getqReq().peek(); // update next request if data sent
+								if (nextReq != null) {
+									if (end1 > nextReq.getStart()) {
+							//			System.out.println("update next req start at: " + end1);
+										n.getqReq().peek().setStart(end1);
+										n.getqReq().peek().setEnd(end1 + n.getqReq().peek().getTimeProcess());
+										check = true;
+									} else if (end1 < nextReq.getStart() && nextReq.getStart() < ts) {
+										check = true;
+									}
+								}
+
+							}
+						}
+
+					}
+
+					// 4.2 caclc cWL
+					System.out.println("\n----- Current WL: ");
+					for (Node n : topo) {
+						double pWL = 0; // processed workload
+						// double aWL = 0; // all assigned worload
+						if ((n.getqReq().size() != 0) || n.getDoneReq().size() != 0) { // node in processing
+//							System.out.println("Node " + n.getName());
+//							n.getDoneReq().forEach((d) -> {
+//								System.out.println("Done req: " + d.getStart() + " " + d.getEnd());
+//							});
+//							n.getqReq().forEach((q) -> System.out.println("Queue req: " + q.getStart() + " " + q.getEnd()));
+
+							for (RequestPSO d : n.getDoneReq()) {
+								pWL += (d.getEnd() - d.getStart()) * n.getRes();
+							}
+
+							if (n.getqReq().peek() != null) {
+								double lastStart = n.getqReq().peek().getStart();
+								if (lastStart < ts) {
+									pWL += (ts - lastStart) * n.getRes();
+								}
+							}
+							// System.out.println("Process WL: " + pWL + " / " + n.getcWL());
+							n.setcWL((n.getcWL() - pWL) < 0 ? 0 : (n.getcWL() - pWL));
+//							System.out.println("cWL: " + n.getcWL());
+						}
+
+					}
+
+					// log
+
+				} // endts
+				System.out.println("\n----- DONE REQ ------");
+				
+				//log node done
+				for (Node n : topo) {
+					if (n.getqReq().size() == 0) {
+						if (n.getDoneReq().size() != 0)
+							System.out.println("Node: " + n.getName());
+						n.getDoneReq().forEach((d) -> System.out
+								.println(d.getId() + "_" + d.getRoute() + ": " + d.getStart() + "\t" + d.getEnd()));
+					}
+				}
+
+				myWriterPSO.write("\nReqID\t" + "a(SrcNode)\t" + "i(DesNode)\t" + "k(Path)\t" + "p(Ratio)\t"
+						+ "dtTrans\t" + "tArrival\t" + "start\t" + "end\t" + "timeSer(PSO)\t" + "t_wait\t" + "t_proc\t" + "t_serv\t" + "\n");
+
+				for (RequestPSO r : req) {
+					// double endM=0;
+					for (Node n : topo) {
+						for (RequestPSO d : n.getDoneReq()) {
+							if (d.getId() == r.getId()) {
+								System.out.println("REQ: " + r.getId() + "\n" + "->" + n.getName() + "_" + d.getRoute()
+										+ ": " + d.getStart() + "\t" + d.getEnd());
+								double t_wait = d.getStart() - d.getTimeArrival();
+								double t_proc = d.getEnd()-d.getStart();
+								double t_serv = d.getTimeTrans()+t_wait + t_proc;
+								myWriterPSO.write(r.getId() + "\t" + d.getSrcNode().getName() + "\t" + n.getName() + "\t"
+										+ d.getRoute() + "\t" + d.getRatio() + "\t" + d.getTimeTrans() + "\t"
+										+ d.getTimeArrival() + "\t" + d.getStart() + "\t" + d.getEnd() + "\t"
+										+ d.getTimeSer() + "\t" + t_wait + "\t" 
+										+ t_proc + "\t" +  t_serv + "\t" 
+										+ "\n");
+								// endM=endM>d.getEnd()?endM:d.getEnd();
+							}
+						}
+					}
+					// myWriterPSO.write(endM + "\n");
+				}
+
+				double wait = 0;
+				int count=0;
+				for (RequestPSO r : req) {
+					double endM = 0;
+					for (Node n : topo) {
+						for (RequestPSO d : n.getDoneReq()) {
+							if (d.getId() == r.getId()) {
+								endM = endM > d.getEnd() ? endM : d.getEnd();
+								wait+=(d.getStart() - d.getTimeArrival());
+								count++;
+							}
+						}
+					}
+					endM -= Math.floor(r.getTimeArrival());
+					myWriterPSOserv.write("\n" + endM);
+				}
+				System.out.println("AVG: " + wait/count);
+			}
+			
+
+			
+		} // end hc
+		myWriterPSOtraff.close();
+		myWriterPSOserv.close();
 		myWriterPSO.close();
 	}
 
@@ -244,7 +484,7 @@ public class MultiReq2 {
 		int id = 0;
 		for (int i = 0; i < m; i++) { // y
 			for (int j = 0; j < n; j++) { // x
-				topo.add(id, new Node(id, "W" + id, j * space, i * space));
+				topo.add(id, new Node(id, String.valueOf(id), j * space, i * space));
 				// topo[id] = new Node (id,"W" + id, j*space,i*space);
 				// System.out.println(topo[id].toString());
 				topo.get(id).setRes(Constants.RES);
@@ -255,8 +495,39 @@ public class MultiReq2 {
 		return topo;
 	}
 
+	private static List<Node> findNeighbour(List<Node> topo, Node root) {
+		List<Node> neigbourNode = new ArrayList<Node>();
+		int id = 1;
+
+		for (Node n1 : root.getNodeLK()) {
+			n1.setLvl(1);
+			neigbourNode.add(n1);
+			id++;
+//			System.out.println(">>\tADD" + id + " " + n1.getId());
+		}
+
+		for (Node n1 : root.getNodeLK()) {
+			for (Node n2 : n1.getNodeLK()) {
+				int npath = 2;
+				if (n2.getId() != root.getId() && (n2.getLvl() > n1.getLvl()) && (!neigbourNode.contains(n2))) {
+					n2.setLvl(2);
+					neigbourNode.add(n2);
+					// System.out.println(">>\tADD" + id + " " + n2.getId());
+
+					id++;
+				}
+			}
+		}
+
+		for (Node t : topo) {
+			t.setLvl(Constants.MAXINT);
+		}
+		return neigbourNode;
+
+	}
+
 	private static List<RTable> createRoutingTable(List<Node> topo, List<RTable> rtable, RequestPSO req,
-			List<Node> listNodeReq) {
+			List<Node> listNodeReq, int MAX, boolean single) {
 		// adding root of req: reqID as name and
 		Node root = req.getSrcNode();
 		rtable.add(0, new RTable(0, root.getName(), root.getName(), 0, root.getRes(), req));
@@ -276,39 +547,104 @@ public class MultiReq2 {
 
 		}
 
-		for (Node n1 : root.getNodeLK()) {
-			// System.out.println("\n>NODE DIRECT: " + n1.getName() + " ROUTE: " +
-			// root.getName());
-			for (Node n2 : n1.getNodeLK()) {
-				int npath = 2;
-				if (n2.getId() != root.getId() && (n2.getLvl() > n1.getLvl()) && (!listNodeReq.contains(n2))) {
-					n2.setLvl(2);
-					// adding vNode
-					n2.getvNode().add(n1);
-					rtable.add(id, new RTable(id, n2.getName(), n1.getName(), 2, n1.getRes(), req));
-					rtable.get(id).setNpath(npath);
-					// System.out.println(">>\tADD DES: " + n2.getName() + " ROUTE: " + n1.getName()
-					// + " | " + npath);
+//		for (Node n1 : root.getNodeLK()) {
+//			// System.out.println("\n>NODE DIRECT: " + n1.getName() + " ROUTE: " +
+//			// root.getName());
+//			for (Node n2 : n1.getNodeLK()) {
+//				int npath = 2;
+//				if (n2.getId() != root.getId() && (n2.getLvl() > n1.getLvl()) && (!listNodeReq.contains(n2))) {
+//					n2.setLvl(2);
+//					// adding vNode
+//					n2.getvNode().add(n1);
+//					rtable.add(id, new RTable(id, n2.getName(), n1.getName(), 2, n1.getRes(), req));
+//					rtable.get(id).setNpath(npath);
+//					// System.out.println(">>\tADD DES: " + n2.getName() + " ROUTE: " + n1.getName()
+//					// + " | " + npath);
+//
+//					id++;
+//
+//				}
+//			}
+//		}
 
-					id++;
+//		for (Node n2 : topo) {
+//			if(n2.getLvl()==2) {
+//				for (Node n3:n2.getNodeLK()) {
+//					int npath=3;
+//					if (n3.getId() != root.getId() && (n3.getLvl() > n2.getLvl()) && (!listNodeReq.contains(n3))) {
+//					n3.setLvl(3);
+//					rtable.add(id, new RTable(id, n3.getName(), n2.getName(), 2, n3.getRes(), req));
+//					rtable.get(id).setNpath(npath);
+//					
+//					 System.out.println(">>\tADD DES: " + n3.getName() + " ROUTE: " + n2.getName()
+//					 + " | " + npath);
+//					
+//					id++;
+//					}
+//				}
+//			}
+//		}
+
+		// int MAX=3;
+		for (int maxHop = 2; maxHop <= MAX; maxHop++) {
+			for (Node n : topo) {
+				if (n.getLvl() == (maxHop - 1)) {
+					for (Node n1 : n.getNodeLK()) {
+						int npath = maxHop;
+						if (n1.getId() != root.getId() && (n1.getLvl() > n.getLvl()) && (!listNodeReq.contains(n1))) {
+							n1.setLvl(maxHop);
+							rtable.add(id, new RTable(id, n1.getName(), n.getName(), maxHop, n1.getRes(), req));
+							rtable.get(id).setNpath(npath);
+
+							// System.out.println(">>\tADD DES: " + n1.getName() + " ROUTE: " + n.getName()
+							// + " | " + npath);
+
+							id++;
+						}
+					
+					}
 
 				}
 			}
 		}
 
+		// update cWL of node to routing table
 		for (RTable r : rtable) {
 			for (Node t : topo) {
 				if (t.getName().equals(r.getDes())) {
-					r.setcWL(t.getWL());
+					r.setcWL(t.getcWL());
+					// System.out.println("Adding r: " + r.toString() + " " +r.getcWL());
 				}
 			}
 		}
 
-		System.out.println("\ncreated RoutingTable: ");
-		rtable.forEach((e) -> {
-			System.out.println(">" + " " + e.toString());
-		});
+//		System.out.println("\ncreated RoutingTable: ");
+//		rtable.forEach((e) -> {
+//			System.out.println(">" + " " + e.toString());
+//		});
+		
+		if (single) {
+			// delete multi-route
+			List<String> desNode = new ArrayList<String>();
+			List<RTable> rmNode = new ArrayList<RTable>();
+			List<RTable> rtableClone = new ArrayList<RTable>();
+			rtableClone = rtable;
+			
+			for (RTable r:rtableClone) {
+				if(!desNode.contains(r.getDes())) { // new desNode
+					desNode.add(r.getDes());
 
+				}else {
+					rmNode.add(r);
+				}
+			}
+			for (RTable rm:rmNode) {
+				rtable.remove(rm);
+			}
+			// end delete 
+		}
+
+		
 		return rtable;
 
 	}
@@ -514,6 +850,11 @@ public class MultiReq2 {
 		return result;
 
 	}
+
+	/**
+	 * @param topo = list node
+	 * @return topo = list node adding neighbour node/ nodelk
+	 */
 
 	private static void setupTopo(List<Node> topo) {
 		for (Node node : topo) {
