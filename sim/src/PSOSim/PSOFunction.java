@@ -12,7 +12,6 @@ import java.util.Set;
 import multihop.Constants;
 import multihop.LogPSO;
 import multihop.RTable;
-import multihop.node.Node;
 
 class PSOFunction {
 
@@ -20,7 +19,7 @@ class PSOFunction {
 	private int nodes;
 	private int testCase;
 
-	public PSOFunction(int nodes, Node bestNode, int testCase) {
+	public PSOFunction(int nodes, int testCase) {
 		this.nodes = nodes;
 		this.testCase = testCase;
 
@@ -30,7 +29,7 @@ class PSOFunction {
 	 * @return PSOVector as value: vector {time(p)}
 	 */
 
-	public PSOVector multiFunction(PSOParticle p, PSOVector currentWorkload, Node bestNode, List<RTable> rtable,
+	public PSOVector multiFunction(PSOParticle p, PSOVector currentWorkload, List<RTable> rtable,
 			HashMap<Integer, List<RTable>> mapRTable) {
 
 		/**

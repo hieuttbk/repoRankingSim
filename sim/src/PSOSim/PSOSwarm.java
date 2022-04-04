@@ -9,7 +9,6 @@ import java.util.Random;
 
 import multihop.LogPSO;
 import multihop.RTable;
-import multihop.node.Node;
 
 /**
  * Represents a swarm of particles from the Particle Swarm Optimization
@@ -17,7 +16,6 @@ import multihop.node.Node;
  */
 public class PSOSwarm {
 
-	private Node bestNode;
 
 	private int numOfParticles, epochs;
 	private double inertia_max, inertia_min, cognitiveComponent, socialComponent;
@@ -87,7 +85,7 @@ public class PSOSwarm {
 		bestEval = INFINITY;
 		this.testCase = testCase;
 
-		model = new PSOFunction(nodes, bestNode, testCase); // model
+		model = new PSOFunction(nodes, testCase); // model
 	}
 
 	/**
@@ -204,7 +202,7 @@ public class PSOSwarm {
 			// System.out.println("particle: " + particle.getPosition().toStringOutput());
 			// double initialEval = model.multiFunction(particle, workLoad,
 			// currentWorkload,bestNode,rtable).getSum();
-			PSOVector initTime = model.multiFunction(particle, currentWorkload, bestNode, rtable, mapRTable);
+			PSOVector initTime = model.multiFunction(particle, currentWorkload, rtable, mapRTable);
 			double initialEval = initTime.getBiggestResult();
 			
 			
@@ -235,7 +233,7 @@ public class PSOSwarm {
 		// double eval = model.multiFunction(p, workLoad,
 		// currentWorkload,bestNode,rtable).getSum();
 		// System.out.println("particle: " + p.getPosition().toStringOutput());
-		double eval = model.multiFunction(p, currentWorkload, bestNode, rtable, mapRTable).getBiggestResult(); // tmax
+		double eval = model.multiFunction(p, currentWorkload, rtable, mapRTable).getBiggestResult(); // tmax
 		// System.out.println("EVAL = " + eval);
 		if (PSOFunction.constraintF1(p, mapRTable)) {
 			eval = INFINITY;

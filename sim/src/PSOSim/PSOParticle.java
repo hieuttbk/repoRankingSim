@@ -9,7 +9,6 @@ import java.util.Set;
 
 import multihop.Constants;
 import multihop.RTable;
-import multihop.util.PSOUtils;
 
 /**
  * Represents a particle from the Particle Swarm Optimization algorithm.
