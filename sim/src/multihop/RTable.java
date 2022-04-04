@@ -1,5 +1,7 @@
 package multihop;
 
+import multihop.request.RequestBase;
+
 public class RTable {
 	int id;
 	String des;
@@ -11,7 +13,7 @@ public class RTable {
 	double resource;
 	int npath;
 	double cWL;
-	RequestPSO req;
+	RequestBase req;
 	double timeSer;
 	
 	/**
@@ -31,7 +33,7 @@ public class RTable {
 	}
 	
 	
-	public RTable(int id, String des, String route, int hop, double resource, RequestPSO req) {
+	public RTable(int id, String des, String route, int hop, double resource, RequestBase req) {
 		super();
 		this.id = id;
 		this.des = des;
@@ -54,12 +56,12 @@ public class RTable {
 	}
 
 
-	public RequestPSO getReq() {
+	public RequestBase getReq() {
 		return req;
 	}
 
 
-	public void setReq(RequestPSO req) {
+	public void setReq(RequestBase req) {
 		this.req = req;
 	}
 

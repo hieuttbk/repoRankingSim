@@ -1,13 +1,15 @@
 package PSOSim;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import multihop.Constants;
 import multihop.RTable;
-import multihop.Util;
+import multihop.util.PSOUtils;
 
 /**
  * Represents a particle from the Particle Swarm Optimization algorithm.
@@ -37,7 +39,7 @@ class PSOParticle {
      * @param endRange      the maximum xyz values of the position (exclusive)
      */
     PSOParticle (FunctionType function, String name, int dim, HashMap<Integer, List<RTable>> mapRTable, List<RTable> rtable ) {
-    	//System.out.println("---------------------init1");
+    	System.out.println("---> init particles");
 
     	this.function = function;
     	position = new PSOVector(dim);
@@ -47,6 +49,7 @@ class PSOParticle {
         this.rtable=rtable;
         
         setRandomPosition();
+        configRandom();
         bestPosition = position.clone();
         
         
@@ -55,6 +58,58 @@ class PSOParticle {
 //        bestEval = eval();
         
     }
+
+    private void configRandom() {
+    	int j=0;
+    	
+    	Set<Integer> keySet= mapRTable.keySet();
+    	List<Integer> sortedList = new ArrayList<>(keySet);
+    	Collections.sort(sortedList);
+    	
+    	
+    	for (Integer id:sortedList) { // req 0, 1
+    		System.out.println("id: " + id);
+    		List<RTable> rTableMap = mapRTable.get(id);  // rtable of req 0  		
+			double compensation = 0;
+			double sumOther =1;
+			int idSelf = j;
+    		for(RTable r:rTableMap) {
+    			double pai = position.getById(j);
+    			double lambWL = r.getResource() / r.getReq().getWL();
+    			double pen = pai-lambWL;
+    			if (!r.getDes().equals(r.getReq().getSrcNode().getName())) {
+    				if (pen > 0) {
+    					pai = lambWL;
+    					position.setById(j, pai);
+    					compensation +=pen;
+    				}
+    				sumOther-=position.getById(j);
+    			}
+    			else {  // source = des 
+    				
+    				idSelf = j;
+    			}    			
+    			j++;
+    		}
+  //  		System.out.println("idSelf: " + id  + " " + idSelf  + " " + sumOther );
+    		position.setById(idSelf, (sumOther));
+    		
+//    		double sum =0;
+//    		int jj=0;
+//    		for(RTable r:rTableMap) {
+//    			sum += position.getById(jj);
+//    			jj++;
+//    		}
+//    		System.out.println("sum = " + sum);
+    		
+    	
+    	}
+ //   	System.out.println(position.toStringOutput());
+    	
+    	
+
+		
+	}
 
 //   
     // create p = rand/ sum(rand) 
@@ -137,12 +192,19 @@ class PSOParticle {
    
     	
 
-		
-    	for (Integer id:mapRTable.keySet()) {
+    	Set<Integer> keySet= mapRTable.keySet();
+    	List<Integer> sortedList = new ArrayList<>(keySet);
+    	Collections.sort(sortedList);
+    	
+    	
+    	for (Integer id:sortedList) { // req 0, 1
     		List<RTable> rTableMap = mapRTable.get(id);
-    		HashMap<String, Integer> paths = Util.getPahts(rTableMap);
+    		
+    		
+    		HashMap<String, Integer> paths = PSOUtils.getPahts(rTableMap);
+    		
     		int len = paths.size();
-    		double[] randP = Util.getRandP(len); 
+    		double[] randP = PSOUtils.getRandP(len); 
     		HashMap<String, Double> ratios = new HashMap<String, Double>();
     		
     		int irandP=0;
@@ -249,11 +311,13 @@ class PSOParticle {
     /**
      * Update the personal best if the current evaluation is better.
      */
-    void updatePersonalBest (double eval) {
+    boolean updatePersonalBest (double eval) {
     	if (eval < bestEval) {
     		bestPosition = position.clone();
     		bestEval = eval;
+    		return true;
     	}
+		return false;
     }
 
     /**

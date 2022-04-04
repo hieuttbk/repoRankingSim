@@ -12,7 +12,15 @@ public class PSOVector {
 	private double[] p; // propagations 
     private double limit = Double.MAX_VALUE;
 
-    // constructor for p[dim] = 0
+    public int getDim() {
+		return dim;
+	}
+
+	public void setDim(int dim) {
+		this.dim = dim;
+	}
+
+	// constructor for p[dim] = 0
     public PSOVector (int dim) {
     	this.dim = dim;
     	this.p = new double[dim];
@@ -154,7 +162,8 @@ public class PSOVector {
     public String toStringOutput () {
     	String output = "";
     	for(int i=0; i<p.length; i++){
-    		output += "p"+i+" : " + p[i] + "\t";
+    		// output += "p"+i+" : " + p[i] + "\t";
+    		output +=p[i] + "\t";
     	}
         return output;
     }
