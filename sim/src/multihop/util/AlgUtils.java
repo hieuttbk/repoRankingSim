@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import PSOSim.PSOSwarm;
+import PSOSim.PSOSwarmRSU;
 import PSOSim.PSOVector;
 import multihop.Constants;
 import multihop.RTable;
@@ -18,18 +19,31 @@ public class AlgUtils {
 
 		int particles = Constants.particles;
 		int epchos = Constants.epchos;
-		int nnodes = num; // number of nodes/dimenssion
+		int dim = num; // number of nodes/dimenssion
 
-		int nworker = num;
 
-		double[] cWorkload = new double[nworker]; // workers
-		for (int i = 0; i < cWorkload.length; i++) {
-			cWorkload[i] = 0;
-		}
+		PSOSwarm swarm = new PSOSwarm(particles, epchos,dim,rtable, mapRTable, testCase);
 
-		PSOVector currentWorkload = new PSOVector(cWorkload);
+		System.out.println("Running PSO in ts = " + ts);
+		Map<Integer, Double> ratio = swarm.run("service-id-string");
 
-		PSOSwarm swarm = new PSOSwarm(particles, epchos, nnodes, currentWorkload, rtable, mapRTable, testCase);
+		result = (HashMap<Integer, Double>) ratio;
+
+		return result;
+
+	}
+	
+	public static HashMap<Integer, Double> getPSORSU(List<RTable> rtable, HashMap<Integer, List<RTable>> mapRTable,
+			int testCase, double ts) {
+		HashMap<Integer, Double> result = new HashMap<Integer, Double>();
+		int num = rtable.size();
+
+		int particles = Constants.particles;
+		int epchos = Constants.epchos;
+		int dim = num; // number of nodes/dimenssion
+
+
+		PSOSwarmRSU swarm = new PSOSwarmRSU(particles, epchos,dim,rtable, mapRTable, testCase);
 
 		System.out.println("Running PSO in ts = " + ts);
 		Map<Integer, Double> ratio = swarm.run("service-id-string");
@@ -43,5 +57,7 @@ public class AlgUtils {
 	public AlgUtils() {
 		// TODO Auto-generated constructor stub
 	}
+
+
 
 }

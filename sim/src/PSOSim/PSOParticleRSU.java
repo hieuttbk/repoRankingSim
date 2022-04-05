@@ -14,7 +14,8 @@ import multihop.RTable;
  * Represents a particle from the Particle Swarm Optimization algorithm.
  * @prams position is value of F() as time
  */
-class PSOParticle {
+class PSOParticleRSU {
+	
     public enum FunctionType {
         A,B,C
     }
@@ -37,7 +38,7 @@ class PSOParticle {
      * @param beginRange    the minimum xyz values of the position (inclusive)
      * @param endRange      the maximum xyz values of the position (exclusive)
      */
-    PSOParticle (FunctionType function, String name, int dim, HashMap<Integer, List<RTable>> mapRTable, List<RTable> rtable ) {
+    PSOParticleRSU (FunctionType function, String name, int dim, HashMap<Integer, List<RTable>> mapRTable, List<RTable> rtable ) {
     	//System.out.println("---> init particles");
 
     	this.function = function;
@@ -48,7 +49,7 @@ class PSOParticle {
         this.rtable=rtable;
         
         setRandomPosition();
-        configRandom();
+       // configRandom();
         bestPosition = position.clone();
         
         
@@ -57,8 +58,12 @@ class PSOParticle {
 //        bestEval = eval();
         
     }
+    
+    
 
-    private void configRandom() {
+
+
+	private void configRandom() {
     	int j=0;
     	
     	Set<Integer> keySet= mapRTable.keySet();
@@ -116,80 +121,7 @@ class PSOParticle {
     	//System.out.println("---------------------init2");
     	int j=0;
     	
-    	
-    	
-//    	List<Integer> otherPaths = new ArrayList<Integer>();
-//    	for (Integer id : mapRTable.keySet()) {
-//			List<RTable> rTable2 = mapRTable.get(id);
-//			for(RTable r:rTable2) {
-//			if(paths.get(r.getDes())==1){
-//				position.setById(j,0.25);
-//			}else {
-//				otherPaths.add(j);
-//			}
-//				j++;
-//			}
-//    	}
-    	
-    	
-    	
- /*   	
-    	int numM=1;
-		for (Integer id : mapRTable.keySet()) {
-			List<RTable> rtableMap = mapRTable.get(id);
-			List<String> check = new ArrayList<String>();
-			for (RTable r : rtableMap) {
-				String nodeID = r.getDes();
-				if (!check.contains(nodeID)) {
-					numM++;
-					check.add(nodeID);
-				}
-			}
-		}
-
-		numM /= mapRTable.size();
-		double NM = Constants.NUM_REQ / numM;
-    	
-    	int j2=0;
-    	for (Integer idmap:mapRTable.keySet()) {
-    		List<RTable> rTableMap = mapRTable.get(idmap);
-			List<Integer> otherPaths = new ArrayList<Integer>();
-			int j3=0;
-    		for(RTable r:rTableMap) {
-    			if(paths.get(r.getDes())==1){
-    				position.setById(j2,0.25);
-    			}else {
-    				otherPaths.add(j2);
-    			}
-    			j2++;
-    			j3++;
-    		}
-    		
-    		for(RTable r:rTableMap) {		
-    	    	double sum3=1-0.25*(rTableMap.size()-otherPaths.size());
-    	    	double sum2=0;
-    	    	PSOVector p = new PSOVector(rtable.size());
-    	    	for (Integer id:otherPaths) {
-    	    		p.setById(id, rand());
-    	    		sum2 += p.getById(id);
-    	    	}
-    	    	
-    	    	for (Integer id:otherPaths) {
-    	    		double value = p.getById(id);
-    	    		p.setById(id, value/sum2);
-    	    		position.setById(id, value*sum3/sum2);
-    	    	}		
-    				j++;
-    			}
-    	}
-    	
-*/    	
-    	
-   // 	System.out.println(position.toStringOutput());
-    	
-    	// Random p in number of node >< no. paths
-   
-    	
+ 
 
     	Set<Integer> keySet= mapRTable.keySet();
     	List<Integer> sortedList = new ArrayList<>(keySet);
@@ -219,81 +151,12 @@ class PSOParticle {
     			}else {
     				position.setById(j,ratios.get(r.getDes())/paths.get(r.getDes()));
     			}
-    //			System.out.println("Process: " + j + " Des: " + r.getDes() + " Path: " + paths.get(r.getDes())  );
     			j++;
     		}
     		
     		
-    	//	System.out.println(randP);
     	}
-  //  	System.out.println(position.toStringOutput());
-    	//original 
-//    	for (Integer id:mapRTable.keySet()) {
-//    		List<RTable> rTable = mapRTable.get(id);
-//    	 	PSOVector p = new PSOVector(rTable.size());
-//    	 	
-//
-//        	double sum = 0;
-//        	for(int i = 0; i< p.getVectorCoordinate().length; i++){
-//        		p.setById(i, rand());
-//        		sum += p.getById(i);
-//        	}
-//        	
-//        	for(int i = 0; i<p.getVectorCoordinate().length; i++){
-//        		double value = p.getById(i);
-//        		p.setById(i, value/sum);
-//        		position.setById(j, value/sum);
-//        		j++;
-//
-//        		
-//        	}
-//   }
 
-    	
-    	
-    	
-    	
-    	
-    	
-    	
-        //	System.out.println("p in req: " +  id);
-
-//        	System.out.println(p.toStringOutput());
-
-//    	}
-    //	System.out.println(position.toStringOutput());
-
-    	//    	mapRTable.forEach((reqId,rTable)->{
-//    	PSOVector p = new PSOVector(rTable.size());
-//    	double sum = 0;
-//    	for(int i = 0; i< p.getVectorCoordinate().length; i++){
-//    		p.setById(i, rand());
-//    		sum += p.getById(i);
-//    	}
-//    	
-//    	for(int i = 0; i<p.getVectorCoordinate().length; i++){
-//    		double value = p.getById(i);
-//    		p.setById(i, value/sum);
-//    		//j++;
-//    		
-//    	}
-//    	});
-    	
-    	
-    	
-    	
-//    	double sum = 0;
-//    	for(int i = 0; i< position.getVectorCoordinate().length; i++){
-//    		position.setById(i, rand());
-//    		sum += position.getById(i);
-//    	//	System.out.println(">>>>DEBUG: " + position.getById(i));
-//    	}
-//    	
-//    	for(int i = 0; i<position.getVectorCoordinate().length; i++){
-//    		double value = position.getById(i);
-//    		position.setById(i, value/sum);
-//    		//System.out.println(">>>>DEBUG: " + i + value/sum);
-//    	}
     }
 
     
@@ -305,7 +168,6 @@ class PSOParticle {
         Random r = new java.util.Random();
         return r.nextDouble(); //generate random from [0.0,1.0)
     }
-    // if use rand/sum(rand), the value needn't 0-1
     
     /**
      * Update the personal best if the current evaluation is better.

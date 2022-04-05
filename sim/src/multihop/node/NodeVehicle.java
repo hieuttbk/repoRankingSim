@@ -26,7 +26,9 @@ public class NodeVehicle extends NodeBase {
 	double aWL = 0; // assigned workload 
 	
 	
-	Vector<Vector<NodeVehicle>> nodeLK = new Vector<Vector<NodeVehicle>>();
+	Vector<Vector<NodeVehicle>> nodeNeighbor = new Vector<Vector<NodeVehicle>>();
+	Vector<Vector<NodeRSU>> nodeParent = new Vector<Vector<NodeRSU>>();
+
 	Queue<RequestVehicle> qReq = new PriorityQueue<RequestVehicle>();
 
 	List<RequestVehicle> doneReq = new ArrayList<RequestVehicle>();
@@ -43,6 +45,21 @@ public class NodeVehicle extends NodeBase {
 		return false;
 	}
 	
+	public boolean checkLK(NodeVehicle a, int i, NodeRSU b) {
+		double ax = a.getX()[i];
+		double ay = a.getY()[i];
+		double bx = b.getLat();
+		double by = b.getLng();
+		double k = (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
+		if (k <= RANGE) {
+			return true;
+		}
+		return false;
+	}
+
+	
+	
+
 	public String toString() {
 		
 		return name + ": " + lat + " , " + lng;
@@ -50,6 +67,14 @@ public class NodeVehicle extends NodeBase {
 	}
 	
 	
+
+	public Vector<Vector<NodeRSU>> getNodeParent() {
+		return nodeParent;
+	}
+
+	public void setNodeParent(Vector<Vector<NodeRSU>> nodeParent) {
+		this.nodeParent = nodeParent;
+	}
 
 	public double getaWL() {
 		return aWL;
@@ -83,12 +108,12 @@ public class NodeVehicle extends NodeBase {
 		this.doneReq = doneReq;
 	}
 
-	public Vector<Vector<NodeVehicle>> getNodeLK() {
-		return nodeLK;
+	public Vector<Vector<NodeVehicle>> getNodeNeighbor() {
+		return nodeNeighbor;
 	}
 
-	public void setNodeLK(Vector<Vector<NodeVehicle>> nodeLK) {
-		this.nodeLK = nodeLK;
+	public void setNodeNeighbor(Vector<Vector<NodeVehicle>> nodeNeighbor) {
+		this.nodeNeighbor = nodeNeighbor;
 	}
 
 	public Boolean checkLK(NodeVehicle a) {
@@ -134,5 +159,6 @@ public class NodeVehicle extends NodeBase {
 	public void setSign(double[] sign) {
 		this.sign = sign;
 	}
+
 
 }

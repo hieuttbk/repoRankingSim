@@ -1,8 +1,15 @@
 package multihop.node;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Vector;
 
+import multihop.request.RequestRSU;
+
 public class NodeRSU extends NodeBase {
+	double CWL;
 
 	public NodeRSU(int id, String name, double lat, double lng, int range, double res) {
 		super(id, name, lat, lng, range, res);
@@ -11,6 +18,11 @@ public class NodeRSU extends NodeBase {
 
 	Vector<NodeRSU> nodeNeigbour = new Vector<NodeRSU>();
 	Vector<Vector<NodeVehicle>> nodeChild = new Vector<Vector<NodeVehicle>>();
+	
+	Queue<RequestRSU> qReq = new PriorityQueue<RequestRSU>();
+	List<RequestRSU> doneReq = new ArrayList<RequestRSU>();
+	
+	
 
 	public Boolean checkLK(NodeVehicle a, int i) {
 		double ax = a.getX()[i];
@@ -38,6 +50,24 @@ public class NodeRSU extends NodeBase {
 		
 	}
 
+	
+	
+	public Queue<RequestRSU> getqReq() {
+		return qReq;
+	}
+
+	public void setqReq(Queue<RequestRSU> qReq) {
+		this.qReq = qReq;
+	}
+
+	public List<RequestRSU> getDoneReq() {
+		return doneReq;
+	}
+
+	public void setDoneReq(List<RequestRSU> doneReq) {
+		this.doneReq = doneReq;
+	}
+
 	public Vector<NodeRSU> getNodeNeigbour() {
 		return nodeNeigbour;
 	}
@@ -53,5 +83,15 @@ public class NodeRSU extends NodeBase {
 	public void setNodeChild(Vector<Vector<NodeVehicle>> nodeChild) {
 		this.nodeChild = nodeChild;
 	}
+
+	public double getCWL() {
+		return CWL;
+	}
+
+	public void setCWL(double cWL) {
+		CWL = cWL;
+	}
+
+
 
 }

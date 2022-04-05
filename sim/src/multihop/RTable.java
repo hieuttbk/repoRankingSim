@@ -1,6 +1,7 @@
 package multihop;
 
 import multihop.request.RequestBase;
+import multihop.request.RequestRSU;
 
 public class RTable {
 	int id;
@@ -140,6 +141,21 @@ public class RTable {
 				+ " tComp:" + timeCompute + " tTrans:" + timeTrans + " tSer: " + (timeCompute+timeTrans)
 				+ " hop:" + hop + " npath:" + npath 
 				+ " cWL:" + cWL;
+		
+		return rtable;
+	}
+	
+	public String toStringRSU() {
+		String rtable = "id: " + id  
+				+ " req:" + req.getId() 
+				+ " src0:" + req.getSrcNode().getName()
+				+ " src:" + ((RequestRSU) req).getSrcNodeRSU().getName() 
+				+ " des:" + des + " route:" + route + " p:" + ratio 
+				+ " tComp:" + timeCompute + " tTrans:" + timeTrans + " tSer: " + (timeCompute+timeTrans)
+				+ " hop:" + hop + " npath:" + npath 
+				+ " cWL:" + cWL 
+				+ " mWL:" + ((RequestRSU) req).getWlRSU(); 
+				;
 		
 		return rtable;
 	}

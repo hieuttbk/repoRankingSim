@@ -11,6 +11,8 @@ import multihop.node.NodeBase;
 import multihop.node.NodeRSU;
 import multihop.node.NodeVehicle;
 import multihop.request.RequestBase;
+import multihop.request.RequestRSU;
+import multihop.request.RequestVehicle;
 
 public class TopoUtils {
 
@@ -139,22 +141,29 @@ public class TopoUtils {
 	 * @return topo = list node adding neighbour node/ nodelk
 	 */
 
-	public static void setupTopo(List<NodeVehicle> topo) {
+	public static void setupTopo(List<NodeVehicle> topo, List<NodeRSU> topoRSU) {
 
 		for (NodeVehicle node : topo) {
 			for (int i = 0; i < Constants.TSIM; i++) {
 				Vector<NodeVehicle> neighNode = new Vector<NodeVehicle>();
-				// System.out.println("\nNode " + node.getName() + " at i: " + i + " add nei:
-				// ");
-
 				for (NodeVehicle nodec : topo) {
 					if ((node.checkLK(nodec, i)) && (node.getId() != nodec.getId())) {
-						// node.getNodeLK().add(nodec); // set neighbor
 						neighNode.add(nodec);
-						// System.out.print(nodec.getName() + " ");
 					}
 				}
-				node.getNodeLK().add(i, neighNode);
+				node.getNodeNeighbor().add(i, neighNode);
+			}
+		}
+
+		for (NodeVehicle node : topo) {
+			for (int i = 0; i < Constants.TSIM; i++) {
+				Vector<NodeRSU> pNode = new Vector<NodeRSU>();
+				for (NodeRSU nodep : topoRSU) {
+					if(node.checkLK(node, i, nodep)) {
+						pNode.add(nodep);
+					}
+				}
+				node.getNodeParent().add(pNode);
 			}
 		}
 
@@ -196,8 +205,8 @@ public class TopoUtils {
 
 		int id = 1;
 
-		for (NodeVehicle n1 : root.getNodeLK().get(i)) {
-			if (root.getNodeLK().get(i + 1).contains(n1)) { // n1 is still neigbours in next ts
+		for (NodeVehicle n1 : root.getNodeNeighbor().get(i)) {
+			if (root.getNodeNeighbor().get(i + 1).contains(n1)) { // n1 is still neigbours in next ts
 
 				n1.setLvl(1);
 				if (!listNodeReq.contains(n1)) {
@@ -213,7 +222,7 @@ public class TopoUtils {
 		for (int maxHop = 2; maxHop <= MAX; maxHop++) {
 			for (NodeVehicle n : topo) {
 				if (n.getLvl() == (maxHop - 1)) {
-					for (NodeVehicle n1 : n.getNodeLK().get(i)) {
+					for (NodeVehicle n1 : n.getNodeNeighbor().get(i)) {
 						int npath = maxHop;
 						if (n1.getId() != root.getId() && (n1.getLvl() > n.getLvl()) && (!listNodeReq.contains(n1))) {
 							n1.setLvl(maxHop);
@@ -265,6 +274,40 @@ public class TopoUtils {
 
 	public TopoUtils() {
 		// TODO Auto-generated constructor stub
+	}
+
+	public static List<RTable> createRoutingTableRSU(List<NodeRSU> topoRSU,RequestRSU req,
+			List<NodeRSU> listNodeReqRSU, int hc, boolean single, int i) {
+		//diff: dont except req node (eg: R0 has req, R1 also assigns to R0)
+
+		List<RTable> rtable = new ArrayList<RTable>(); // rtable of a request
+		
+		// adding root of req: reqID as name and
+		i = i - 1;
+		NodeRSU root = req.getSrcNodeRSU();
+		rtable.add(0, new RTable(0, root.getName(), root.getName(), 0, root.getRes(), req));
+
+		int id = 1;
+
+		for (NodeRSU n1 : root.getNodeNeigbour()) {
+				n1.setLvl(1);
+					rtable.add(id, new RTable(id, n1.getName(), root.getName(), 1, n1.getRes(), req));
+					rtable.get(id).setNpath(1);
+					id++;				
+		}
+
+		// update cWL of node to routing table
+		for (RTable r : rtable) {
+			for (NodeRSU t : topoRSU) {
+				if (t.getName().equals(r.getDes())) {
+					r.setcWL(t.getCWL());
+					// System.out.println("Adding r: " + r.toString() + " " +r.getcWL());
+				}
+			}
+		}
+
+		return rtable;
+
 	}
 
 }
