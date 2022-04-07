@@ -27,6 +27,7 @@ import multihop.request.RequestRSU;
 import multihop.request.RequestVehicle;
 import multihop.util.AlgUtils;
 import multihop.util.TopoUtils;
+import multihop.util.TrafficUtils;
 
 public class MainSim {
 
@@ -38,28 +39,25 @@ public class MainSim {
 		/**
 		 * ------------------------------- Prams-------------------------------
 		 **/
-		// case
 		boolean DEBUG = true;
 		boolean single;
-		int hc = 2;
+		int hc = 2; // hop-count is number of path to a node
 
 		/**
-		 * --- 1.Create topo---
+		 * --- 1.Create topology---
 		 */
-
+		
 		// vehicle node
 		int _m = 5, _n = 5;
 		List<NodeVehicle> topo = new ArrayList<NodeVehicle>();
-		topo = (List<NodeVehicle>) TopoUtils.createTopo(_m, _n, 10, Constants.TYPE.VEHICLE.ordinal()); // init topo
-																										// Vehicle
+		topo = (List<NodeVehicle>) TopoUtils.createTopo(_m, _n, 10, Constants.TYPE.VEHICLE.ordinal());
 		TopoUtils.updateTimeTopo(topo); // adding moving by time for Vehicle
-		// Parent node in overlap range RSU1 and RSU2
 
 		// RSU node
 		_m = 3;
 		_n = 3;
 		List<NodeRSU> topoRSU = new ArrayList<NodeRSU>();
-		topoRSU = (List<NodeRSU>) TopoUtils.createTopo(_m, _n, 20, Constants.TYPE.RSU.ordinal()); // init topo
+		topoRSU = (List<NodeRSU>) TopoUtils.createTopo(_m, _n, 20, Constants.TYPE.RSU.ordinal());
 
 		// make connection child-parent-neighbor
 		TopoUtils.setupTopoRSU(topoRSU, topo); // create neighbor
@@ -127,7 +125,7 @@ public class MainSim {
 
 					for (int t = 1; t <= nTS; t++) {
 						System.out.println("\nts=" + t + " ----------------------------------------------------------");
- 						double ts = TS * t;
+						double ts = TS * t;
 
 						/**
 						 * --- 1. Create routing table---
@@ -146,7 +144,7 @@ public class MainSim {
 							if ((start < ts) && (start >= (ts - TS))) {
 								listNodeReq.add(r.getSrcNode());
 								reqTS.add(r);
-								debug(r.getSrcNode().getName() + "." + start + "\t", DEBUG);
+								// debug(r.getSrcNode().getName() + "." + start + "\t", DEBUG);
 							}
 						}
 
@@ -219,24 +217,19 @@ public class MainSim {
 
 						// list node moving data and the requestID
 						for (NodeRSU n : topoRSU) {
-							if (n.getqReq().peek() != null) {
+							if (n.getqReqV().peek() != null) {
 								listNodeReqRSU.add(n);
 							}
 						}
-						listNodeReqRSU.forEach(l -> System.out.println("listNodeReqRSU: " + l.getName()));
+						// listNodeReqRSU.forEach(l -> System.out.println("listNodeReqRSU: " +
+						// l.getName()));
+
 						// list request in a TS
 						for (NodeRSU n : topoRSU) {
-
-//							RequestRSU rr = n.getqReq().peek();
-//							if (rr != null) {
-//								rr.setSrcNodeRSU(n);
-//								reqTSRSU.add(rr);
-//							}
-
-							for (RequestRSU rr : n.getqReq()) {
+							for (RequestRSU rr : n.getqReqV()) { // multi req to 1 node
 								rr.setSrcNodeRSU(n);
 								reqTSRSU.add(rr);
-								
+
 							}
 
 						}
@@ -249,61 +242,71 @@ public class MainSim {
 							mapRTableRSU.put(reqId, rtableREQ); // merge reqs with id
 						}
 
-					
-
 						System.out.println("\n***********PSO Running RSU***********\n");
 
 						// HashMap<Integer, Double> resultPSORSU = AlgUtils.getPSO(rtableRSU,
 						// mapRTableRSU, testCase, ts);
+
 						HashMap<Integer, Double> resultPSORSU = AlgUtils.getPSORSU(rtableRSU, mapRTableRSU, testCase,
 								ts);
+
 						// get output of PSO-alg
 						Set<Integer> rID = resultPSORSU.keySet();
 						for (Integer id : rID) {
 							rtableRSU.get(id).setRatio(resultPSORSU.get(id));
 						}
 
-						resultPSORSU.forEach((K, V) -> System.out.println(V));
-						
-						int i=0;
+						// resultPSORSU.forEach((K, V) -> System.out.println(V));
+
+						int i = 0;
 						int[] id = new int[reqTSRSU.size()];
-						for (RequestRSU rr:reqTSRSU) {
+						for (RequestRSU rr : reqTSRSU) {
 							double max = 0;
-							int i2=0;
+							int i2 = 0;
 							for (RTable r : rtableRSU) {
-								if(r.getReq().getId()==rr.getId()) {
-									if(r.getRatio()>max) {
+								if (r.getReq().getId() == rr.getId()) {
+									if (r.getRatio() > max) {
 										max = r.getRatio();
 										id[i] = i2;
 									}
-									r.setRatio(0);  // set all to 0
+									r.setRatio(0); // set all to 0
 								}
 								i2++;
-							}	
+							}
 							i++;
 						}
-						
-						for (Integer i2:id) {
+
+						for (Integer i2 : id) {
 							rtableRSU.get(i2).setRatio(1); // set max to 1
 						}
-						
+
+//						// done set ratio to rtable.
+
+						// TODO
+						calcTSerPSORSU(rtableRSU, testCase);
+
 						for (RTable r : rtableRSU) {
 							System.out.println(r.toStringRSU());
 						}
-					
-					
-					
-					
-					
+
+						insertQRSU(topoRSU, rtableRSU, t);
+
+//						System.out.println("TEST AFTER INSERT: ");
+//						for (NodeRSU n : topoRSU) {
+//							n.getqReq().forEach(nqr -> System.out.println(n.getName() + " : " + nqr.toString()));
+//						}
+
+						updateQRSU(topoRSU, ts);
+
+						updateCWLRSU(topoRSU, ts);
+
 					} // endts
 					System.out.println("\n----- DONE REQ ------");
-
-
-
 					myWriterPSO.write("\nReqID\t" + "a(SrcNode)\t" + "i(DesNode)\t" + "k(Path)\t" + "p(Ratio)\t"
 							+ "dtTrans\t" + "tArrival\t" + "start\t" + "end\t" + "timeSer(PSO)\t" + "t_wait\t"
 							+ "t_proc\t" + "t_serv\t" + "moved_data" + "\n");
 
+					// log for vehicle topo
 					for (RequestBase r : req) {
 						// double endM=0;
 						for (NodeVehicle n : topo) {
@@ -320,12 +323,40 @@ public class MainSim {
 											+ "\t" + dv.getTimeArrival() + "\t" + dv.getStart() + "\t" + dv.getEnd()
 											+ "\t" + dv.getTimeSer() + "\t" + t_wait + "\t" + t_proc + "\t" + t_serv
 											+ "\t" + dv.getMovedData() + "\n");
-									// endM=endM>d.getEnd()?endM:d.getEnd();
 
 								}
 							}
 						}
-						// myWriterPSO.write(endM + "\n");
+					}
+
+					myWriterPSO.write("\n RSU TOPO \n");
+					myWriterPSO.write("\nReqID\t" + "a(SrcNode)\t" + "i(DesNode)\t" + "k(Path)\t" + "p(Ratio)\t"
+							+ "dtTrans\t" + "tArrival\t" + "start\t" + "end\t" + "timeSer(PSO)\t" + "t_wait\t"
+							+ "t_proc\t" + "t_serv\t" + "moved_data\t" + "t_trans_vr\t" + "t_end_real" + "\n");
+
+					// log for RSU topo
+					for (RequestBase r : req) {
+						for (NodeRSU n : topoRSU) {
+							for (RequestBase d : n.getDoneReq()) {
+								if (d.getId() == r.getId()) {
+									RequestRSU dv = (RequestRSU) d;
+									double t_wait = dv.getStart() - dv.getTimeArrival();
+									double t_proc = dv.getEnd() - dv.getStart();
+									double t_serv = dv.getTimeTrans() + t_wait + t_proc;
+									double t_trans_vr = dv.getWL()/Constants.BW;
+
+									myWriterPSO.write(r.getId() + "\t" + dv.getSrcNode().getName() + "-"
+											+ dv.getSrcNodeRSU().getName() + "\t" + n.getName() + "\t" + dv.getRoute()
+											+ "\t" + dv.getRatio() + "\t" + dv.getTimeTrans() + "\t"
+											+ dv.getTimeArrival() + "\t" + dv.getStart() + "\t" + dv.getEnd() + "\t"
+											+ dv.getTimeSer() + "\t" + t_wait + "\t" + t_proc + "\t" + t_serv + "\t"
+											+ dv.getMovedData() + "\t" + t_trans_vr + "\t" + (dv.getEnd()+t_trans_vr) +
+											"\n");
+
+								}
+							}
+						}
+
 					}
 
 					// calc avg
@@ -363,7 +394,7 @@ public class MainSim {
 	}
 
 	private static void updateCWL(List<NodeVehicle> topo, double ts) {
-		System.out.println("\n----- Current WL: ");
+		// System.out.println("\n----- Current WL: ");
 		// listCWL.write("p");
 		for (NodeVehicle n : topo) {
 			double pWL = 0; // processed workload
@@ -400,8 +431,45 @@ public class MainSim {
 
 	}
 
+	private static void updateCWLRSU(List<NodeRSU> topoRSU, double ts) {
+		System.out.println("\n----- Current WL: ");
+		// listCWL.write("p");
+		for (NodeRSU n : topoRSU) {
+			double pWL = 0; // processed workload
+			// double aWL = 0; // all assigned worload
+			if ((n.getqReq().size() != 0) || n.getDoneReq().size() != 0) { // node in processing
+//				System.out.println("Node " + n.getName());
+//					n.getDoneReq().forEach((d) -> {
+//						System.out.println("Done req: " + d.getStart() + " " + d.getEnd());
+//					});
+//					n.getqReq().forEach((q) -> System.out.println("Queue req: " + q.getStart() + " " + q.getEnd()));
+
+				for (RequestBase d : n.getDoneReq()) {
+					pWL += (((RequestRSU) d).getEnd() - ((RequestRSU) d).getStart()) * n.getRes();
+				}
+
+				if (n.getqReq().peek() != null) {
+					double lastStart = ((RequestRSU) n.getqReq().peek()).getStart();
+					if (lastStart < ts) {
+						pWL += (ts - lastStart) * n.getRes();
+					}
+				}
+//				System.out.print("Process WL: " + pWL + " / " + n.getaWL());
+				n.setCWL((n.getaWL() - pWL) < 0 ? 0 : (n.getaWL() - pWL));
+//				System.out.println("\tcWL: " + n.getcWL());
+			}
+			// listCWL.write(pWL + "\t");
+
+//		if (listNodeReq.contains(n)) {				
+//			listCWL.write("\n" + t + "\t" + n.getId() + "\t" + n.getcWL());
+//			if (n.getcWL()>0) {n.setcWL(0);}
+//		}
+
+		}
+	}
+
 	private static void updateQ(List<NodeVehicle> topo, double ts) {
-		System.out.println("\nUPDATE QUEUE");
+		// System.out.println("\nUPDATE QUEUE");
 		for (NodeVehicle n : topo) {
 			boolean check = true;
 			while (check && (n.getqReq().peek() != null)) {
@@ -435,11 +503,46 @@ public class MainSim {
 			}
 
 		}
+	}
 
+	private static void updateQRSU(List<NodeRSU> topoRSU, double ts) {
+		System.out.println("\nUPDATE QUEUE RSU");
+		for (NodeRSU n : topoRSU) {
+			boolean check = true;
+			while (check && (n.getqReq().peek() != null)) {
+				RequestRSU rv = (RequestRSU) n.getqReq().peek();
+				double start1 = rv.getStart();
+				double end1 = rv.getEnd();
+				System.out.print(n.getName() + " ");
+				System.out.println(rv.toString() + " " + start1 + " -> " + end1);
+				check = false;
+				if (end1 < ts) {
+					n.getqReq().peek().setDone(true);
+					n.getDoneReq().add(n.getqReq().peek()); // adding to done req
+					System.out.println("doneREQ: " + n.getqReq().peek().getStart() + " -> " + end1);
+					n.getqReq().remove(); // req is done, removing
+					RequestRSU nextReq = (RequestRSU) n.getqReq().peek(); // update next request
+																			// if data sent
+					if (nextReq != null) {
+						if (end1 > nextReq.getStart()) {
+							// System.out.println("update next req start at: " + end1);
+							((RequestRSU) n.getqReq().peek()).setStart(end1);
+							((RequestRSU) n.getqReq().peek())
+									.setEnd(end1 + ((RequestRSU) n.getqReq().peek()).getTimeProcess());
+							check = true;
+						} else if (end1 < nextReq.getStart() && nextReq.getStart() < ts) {
+							check = true;
+						}
+					}
+
+				}
+			}
+
+		}
 	}
 
 	private static void insertQ(List<NodeVehicle> topo, List<RTable> rtable, int t) {
-		System.out.println("\nCALC assigned new workload and ADD new reqs to queue");
+		// System.out.println("\nCALC assigned new workload and ADD new reqs to queue");
 		// listCWL.write("a");
 		for (NodeVehicle n : topo) {
 			double aWL = 0; // all assigned workload as new-workload
@@ -450,6 +553,7 @@ public class MainSim {
 					aWL += r.getRatio() * r.getReq().getWL();
 					double t_process = r.getRatio() * r.getReq().getWL() / r.getResource();
 
+					// calc moving data
 					if (r.getDes().equals(r.getReq().getSrcNode().getName())) { // source request node
 						move_data = aWL - Constants.RES[Constants.TYPE.VEHICLE.ordinal()];
 						if (move_data > 0) {
@@ -475,16 +579,16 @@ public class MainSim {
 
 					n.getqReq().add(rv);
 
+					// moving to nodeRSU
 					if (r.getDes().equals(r.getReq().getSrcNode().getName())) {
-						// moving to nodeRSU
 						RequestRSU rr = new RequestRSU(rv);
 						Vector<NodeRSU> vnr = n.getNodeParent().get(t);
 						if (!vnr.isEmpty()) {
 							NodeRSU nr = n.getNodeParent().get(t).get(0);
-							nr.getqReq().add(rr); // adding req to first parent
-							System.out.println("Node: " + n.getName() + " sending to: " + nr.getName());
+							nr.getqReqV().add(rr); // adding req to first parent
+							System.out.println(n.getName() + " move ->" + nr.getName() + " " + rr.toString());
 						} else {
-							System.out.println("NO RSU TO TRANSFER DATA");
+							System.out.println("NO RSU TO TRANSFER DATA, NODE: " + n.getName());
 						}
 					}
 
@@ -497,7 +601,95 @@ public class MainSim {
 
 	}
 
+	private static void insertQRSU(List<NodeRSU> topoRSU, List<RTable> rtable, int t) {
+		System.out.println("\ninsertQRSU");
+
+		for (NodeRSU n : topoRSU) {
+			n.getqReqV().clear(); // remove reqs from vehicle
+			double aWL = 0; // all assigned workload as new-workload
+			boolean check = false;
+			for (RTable r : rtable) {
+				double move_data = 0;
+				if (r.getDes().equals(n.getName())) {
+					RequestRSU rq = (RequestRSU) r.getReq();
+					if (r.getRatio() == 1) {
+						aWL += r.getRatio() * r.getReq().getWL();
+						double t_process = r.getRatio() * r.getReq().getWL() / r.getResource();
+						// adding queue
+						double start = r.getTimeTrans() + (t - 1) * TS;
+						rq.setRatio(r.getRatio());
+						rq.setStart(start);
+						rq.setTimeArrival(start);
+						rq.setTimeProcess(t_process);
+						rq.setEnd(start + t_process);
+						rq.setTimeTrans(r.getTimeTrans());
+						rq.setTimeSer(r.getTimeSer());
+						rq.setRoute(r.getRoute());
+						n.getqReq().add(rq);
+						// System.out.println("Insert to: " + n.getName() + " <- " + rq.toString());
+						// n.getqReq().forEach(nqr->System.out.println(n.getName() + " : " +
+						// nqr.toString()));
+					}
+					check = true;
+				}
+
+			}
+
+			n.setaWL(n.getaWL() + aWL);
+
+			// n.getqReq().forEach(nqr->System.out.println(n.getName() + " : " +
+			// nqr.toString()));
+
+		}
+
+//		System.out.println("TEST AFTER INSERT: ");
+//		for (NodeRSU n : topoRSU) {
+//		n.getqReq().forEach(nqr->System.out.println(n.getName() + " : " + nqr.toString()));
+//		}
+
+	}
+
 	private static void calcTSerPSO(List<RTable> rtable, int testCase) {
+		// 3.1 t_ser based PSO in rtable
+		for (RTable r : rtable) {
+			double compute = 0;
+			double trans = 0;
+			double workLoad = r.getReq().getWL();
+			double subWL = r.getRatio() * workLoad; // new WL
+			double totalWL = subWL + r.getcWL(); // adding cWL
+			compute = totalWL / r.getResource(); // totalTime
+
+			if (testCase != 2) {
+				// calc t_process for all paths to node ~ including t_wait
+				for (RTable r2 : rtable) {
+					if (r2.getDes().equals(r.getDes())
+							&& (r2.getId() != r.getId() || (r2.getReq().getId() != r.getReq().getId()))) {
+						// adding route 2hop-2path
+						compute += r2.getRatio() * r2.getReq().getWL() / r2.getResource();
+						subWL += r2.getRatio() * r2.getReq().getWL(); // adding newWL route2
+
+					}
+				}
+			}
+
+			trans = (r.getRatio() * workLoad / Constants.BW) * r.getHop();
+
+			if (r.getId() == 0) {
+				trans = 0;
+			}
+			;
+
+			r.setTimeCompute(compute);
+			r.setTimeTrans(trans);
+
+			double ser = compute + trans;
+			r.setTimeSer(ser);
+
+		} // END 3.1: LOG TIME IN RTABLE
+
+	}
+
+	private static void calcTSerPSORSU(List<RTable> rtable, int testCase) {
 		// 3.1 t_ser based PSO in rtable
 		for (RTable r : rtable) {
 			double compute = 0;

@@ -1,4 +1,4 @@
-package multihop;
+package multihop.util;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
+import multihop.Constants;
 import multihop.node.NodeVehicle;
 import multihop.request.RequestBase;
 import multihop.request.RequestVehicle;

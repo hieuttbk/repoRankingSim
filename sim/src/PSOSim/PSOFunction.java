@@ -687,11 +687,11 @@ class PSOFunction {
 				checkSum += p.getPosition().getById(j);
 				j++;
 			}
-			double check = checkSum - 1;
-			double MIN = 1 / 1E8;
-			if (check > MIN) {
-				System.out.println("checkSum = " + checkSum);
-				log.log("\tF1\t");
+			int check = (int)(checkSum*(10000)) - 10000;
+			//System.out.println("checkSum = " + checkSum + " " + check);
+
+			if (Math.abs(check)>1) {
+				System.out.println("F1 = " + checkSum + " " + check);
 				return true;
 			}
 			;
@@ -733,10 +733,11 @@ class PSOFunction {
 						checkSum += p.getPosition().getById(j);
 						j++;
 					}
-					double check = checkSum - 1;
-					double MIN = 1 / 1E8;
-					if (check > MIN) {
-						System.out.println("checkSum = " + checkSum);
+					int check = (int)(checkSum*(10000)) - 10000;
+					//System.out.println("checkSum = " + checkSum + " " + check);
+
+					if (Math.abs(check)>1) {
+						System.out.println("F1 = " + checkSum + " " + check);
 						return true;
 					}
 					;

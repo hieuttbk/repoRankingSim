@@ -18,6 +18,15 @@ public class RequestRSU extends RequestVehicle {
 		super(rv.getId(), rv.getMovedData(),rv.getSrcNode(),rv.getTimeInit(),rv.isDone(),rv.getDes(),rv.getRoute(),rv.getStart(),rv.getEnd());
 		//this.wlRSU = rv.getMovedData();
 	}
+	
+	public String toString() {
+		if(this.srcNodeRSU!=null) {
+			return "req"+ this.id + " (p=" + this.ratio + " " +  this.srcNodeRSU.getName() + "-" + this.srcNode.getName() + ")";
+		}else {
+			return "req"+ this.id + " (" + this.ratio + " " + this.srcNode.getName() + ")";
+
+		}
+	}
 
 	public NodeRSU getSrcNodeRSU() {
 		return srcNodeRSU;
@@ -34,7 +43,19 @@ public class RequestRSU extends RequestVehicle {
 	public void setWlRSU(double wlRSU) {
 		this.wlRSU = wlRSU;
 	}
+	
 
+	@Override
+	public int compareTo(RequestBase o) {
+		
+		if (this.start >= ((RequestRSU)o).start) {
+			return 1;
+		} else if (this.start < ((RequestRSU)o).start) {
+			return -1;
+		} else {
+			return 0;
+		}
+	}
 	
 	
 }

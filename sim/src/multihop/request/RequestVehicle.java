@@ -24,7 +24,7 @@ public class RequestVehicle extends RequestBase {
 		this.end = end;
 	}
 
-public RequestVehicle(int id, double wL, NodeVehicle srcNode, double timeInit, boolean done, int des, String route,
+	public RequestVehicle(int id, double wL, NodeVehicle srcNode, double timeInit, boolean done, int des, String route,
 			double timeArrival, double timeProcess, double ratio, double timeTrans, double start, double end,
 			double timeSer, double movedData) {
 		super(id, wL, srcNode, timeInit, done);
@@ -39,10 +39,6 @@ public RequestVehicle(int id, double wL, NodeVehicle srcNode, double timeInit, b
 		this.timeSer = timeSer;
 		this.movedData = movedData;
 	}
-
-
-
-
 
 	public int getDes() {
 		return des;
@@ -130,6 +126,18 @@ public RequestVehicle(int id, double wL, NodeVehicle srcNode, double timeInit, b
 
 	public void setMovedData(double movedData) {
 		this.movedData = movedData;
+	}
+
+	@Override
+	public int compareTo(RequestBase o) {
+		
+		if (this.start >= ((RequestVehicle)o).start) {
+			return 1;
+		} else if (this.start < ((RequestVehicle)o).start) {
+			return -1;
+		} else {
+			return 0;
+		}
 	}
 
 }

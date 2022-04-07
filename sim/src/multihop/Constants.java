@@ -12,34 +12,39 @@ public class Constants {
 
 	public final static int MAXINT = Integer.MAX_VALUE;
 	public final static double MAXDOUBLE = Double.MAX_VALUE;
+	
+	//communication range for Vehicle, Rsu and Server
 	public final static int[] RANGE = {14*14, 20*20, 30*30};
 
 	// public final static double BW = 1/0.00004;
 	public final static double BW = 1 / 0.004;
-	public final static double[] RES = { 1 / 0.033, 5 / 0.033, 25 / 0.033 }; // RES of vehicle, RSU, Server
+	
+	// Resource is process capacity of Node. t_process = RES * WL.
+	public final static double[] RES = { 1 / 0.033, 100 / 0.033, 25 / 0.033 }; 
 	// public final static double LAMBDA = 1/RES;
 
-	public final static double ALPHA = 1; // EXP(-ALPHA*d)
-
+	// pso prames
 	public final static int particles = 50;
 	public final static int epchos = 1000;
 
-	public final static int NUM_REQ = 100; // rate *100
-	public final static int TSIM = 150; // 500 for rate7-10, 200 for rate 3-5
-
-	public final static double B = 1;
-	public final static double C = 1;
+	// REQ prams 
+	public final static int NUM_REQ = 2; // rate *100
+	public final static int TSIM = 5; // simulation time
+	public final static int TS = 1; // 1ts = 1s
 
 	public final static int MAXHOP = 1;
-	public final static int TS = 1;
 
 	public final static double lambda = 20;
 	public final static double tlambda = 0.4;
-//	public final static boolean single = false;
-//	public final static boolean single = true; Fail
 
 	public final static int testcase = 7;
+	
+	
+	// just a constant to tune alg
 	public static double A = 0;
+	public final static double ALPHA = 1; // EXP(-ALPHA*d)
+	public final static double B = 1;
+	public final static double C = 1;
 
 	public final static double[] ST = { 0.3302103640155354, 0.32281543010356206, 0.09233558422558263,
 			0.9831394804291196, 0.5158145779613519, 0.010865716473738796, 0.5056158889896546, 0.7067782152309505,

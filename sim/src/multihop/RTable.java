@@ -146,10 +146,10 @@ public class RTable {
 	}
 	
 	public String toStringRSU() {
-		String rtable = "id: " + id  
-				+ " req:" + req.getId() 
-				+ " src0:" + req.getSrcNode().getName()
-				+ " src:" + ((RequestRSU) req).getSrcNodeRSU().getName() 
+		String rtable = "id:" + id  
+				+ " req" + req.getId() 
+				+ " src:" + req.getSrcNode().getName()
+				+ "-" + ((RequestRSU) req).getSrcNodeRSU().getName() 
 				+ " des:" + des + " route:" + route + " p:" + ratio 
 				+ " tComp:" + timeCompute + " tTrans:" + timeTrans + " tSer: " + (timeCompute+timeTrans)
 				+ " hop:" + hop + " npath:" + npath 
