@@ -12,6 +12,7 @@ import java.util.Set;
 import multihop.Constants;
 import multihop.LogPSO;
 import multihop.RTable;
+import multihop.request.RequestRSU;
 
 class PSOFunction {
 
@@ -99,11 +100,15 @@ class PSOFunction {
 		double TMAX = 0;
 
 		for (RTable r : rtable) {
+			
 			double t_trans;
 
 			t_trans = (ratio.getById(j2) * r.getReq().getWL() / Constants.BW) * r.getHop();
 			if (r.getId() == 0)
 				t_trans = 0;
+			
+			RequestRSU rr = (RequestRSU) r.getReq();
+			t_trans += rr.getTimeVR(); // adding time trans VR
 
 			r.setTimeTrans(t_trans);
 			// position.setById(j, r.getTimeTrans() + r.getTimeCompute());

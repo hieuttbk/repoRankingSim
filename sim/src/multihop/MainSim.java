@@ -343,14 +343,16 @@ public class MainSim {
 									double t_wait = dv.getStart() - dv.getTimeArrival();
 									double t_proc = dv.getEnd() - dv.getStart();
 									double t_serv = dv.getTimeTrans() + t_wait + t_proc;
-									double t_trans_vr = dv.getWL()/Constants.BW;
+									//double t_trans_vr = dv.getWL()/Constants.BW;
+									double t_trans_vr = dv.getTimeVR();
+									
 
 									myWriterPSO.write(r.getId() + "\t" + dv.getSrcNode().getName() + "-"
 											+ dv.getSrcNodeRSU().getName() + "\t" + n.getName() + "\t" + dv.getRoute()
 											+ "\t" + dv.getRatio() + "\t" + dv.getTimeTrans() + "\t"
 											+ dv.getTimeArrival() + "\t" + dv.getStart() + "\t" + dv.getEnd() + "\t"
 											+ dv.getTimeSer() + "\t" + t_wait + "\t" + t_proc + "\t" + t_serv + "\t"
-											+ dv.getMovedData() + "\t" + t_trans_vr + "\t" + (dv.getEnd()+t_trans_vr) +
+											+ dv.getMovedData() + "\t" + t_trans_vr + "\t"  +
 											"\n");
 
 								}
@@ -375,11 +377,33 @@ public class MainSim {
 						}
 
 						// endM -= Math.floor(((RequestVehicle) r).getTimeArrival());
-						// endM -= Math.floor(((RequestVehicle) r).getTimeArrival());
+						endM -= Math.floor(r.getTimeInit());
 						myWriterPSOserv.write("\n" + r.getId() + "\t" + endM);
 					}
 //					System.out.println("AVG: " + wait / count);
 
+					
+					myWriterPSOserv.write("\n RSU logging\n");
+					for (RequestBase r : req) {
+						double endM = 0;
+						for (NodeRSU n : topoRSU) {
+							for (RequestBase d : n.getDoneReq()) {
+								if (d.getId() == r.getId()) {
+									endM = endM > ((RequestRSU) d).getEnd() ? endM : ((RequestRSU) d).getEnd();
+									wait += (((RequestRSU) d).getStart() - ((RequestRSU) d).getTimeArrival());
+									count++;
+								}
+							}
+						}
+
+						// endM -= Math.floor(((RequestVehicle) r).getTimeArrival());
+						endM -= Math.floor(r.getTimeInit());
+						myWriterPSOserv.write("\n" + r.getId() + "\t" + endM);
+					}
+					
+					
+					
+					
 					myWriterPSOserv.close();
 					myWriterPSO.close();
 				} // end for each case
@@ -581,7 +605,13 @@ public class MainSim {
 
 					// moving to nodeRSU
 					if (r.getDes().equals(r.getReq().getSrcNode().getName())) {
+						double dtVR = 0;
+						// dt from V to R (fix 1hop and same BW)
+						// need increase BW (V-R)
+						dtVR = r.getRatio() * r.getReq().getWL() / Constants.BW; 
 						RequestRSU rr = new RequestRSU(rv);
+						rr.setTimeVR(dtVR);
+						//System.out.println(rv.getTimeArrival());
 						Vector<NodeRSU> vnr = n.getNodeParent().get(t);
 						if (!vnr.isEmpty()) {
 							NodeRSU nr = n.getNodeParent().get(t).get(0);
@@ -617,18 +647,20 @@ public class MainSim {
 						double t_process = r.getRatio() * r.getReq().getWL() / r.getResource();
 						// adding queue
 						double start = r.getTimeTrans() + (t - 1) * TS;
+						start+= rq.getTimeVR();
+						
 						rq.setRatio(r.getRatio());
 						rq.setStart(start);
-						rq.setTimeArrival(start);
+						rq.setTimeArrival(start); 
 						rq.setTimeProcess(t_process);
 						rq.setEnd(start + t_process);
 						rq.setTimeTrans(r.getTimeTrans());
 						rq.setTimeSer(r.getTimeSer());
 						rq.setRoute(r.getRoute());
 						n.getqReq().add(rq);
-						// System.out.println("Insert to: " + n.getName() + " <- " + rq.toString());
-						// n.getqReq().forEach(nqr->System.out.println(n.getName() + " : " +
-						// nqr.toString()));
+						 System.out.println("Insert to: " + n.getName() + " <- " + rq.toString());
+						 n.getqReq().forEach(nqr->System.out.println(n.getName() + " : " +
+						 nqr.toString()));
 					}
 					check = true;
 				}
@@ -694,6 +726,7 @@ public class MainSim {
 		for (RTable r : rtable) {
 			double compute = 0;
 			double trans = 0;
+			double trans_rv=0;
 			double workLoad = r.getReq().getWL();
 			double subWL = r.getRatio() * workLoad; // new WL
 			double totalWL = subWL + r.getcWL(); // adding cWL
@@ -713,12 +746,16 @@ public class MainSim {
 			}
 
 			trans = (r.getRatio() * workLoad / Constants.BW) * r.getHop();
+			
 
 			if (r.getId() == 0) {
 				trans = 0;
 			}
 			;
 
+			RequestRSU rr = (RequestRSU) r.getReq();
+			//trans += rr.getTimeVR(); // adding time trans VR
+			
 			r.setTimeCompute(compute);
 			r.setTimeTrans(trans);
 

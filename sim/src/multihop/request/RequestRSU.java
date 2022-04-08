@@ -7,6 +7,7 @@ public class RequestRSU extends RequestVehicle {
 	NodeRSU srcNodeRSU;
 	int desRSU;
 	double wlRSU;
+	double timeVR; // t_trans from Vehicle to RSU
 
 	public RequestRSU(int id, double wL, NodeVehicle srcNode, double timeInit, boolean done, int des, String route,
 			double start, double end) {
@@ -26,6 +27,14 @@ public class RequestRSU extends RequestVehicle {
 			return "req"+ this.id + " (" + this.ratio + " " + this.srcNode.getName() + ")";
 
 		}
+	}
+
+	public double getTimeVR() {
+		return timeVR;
+	}
+
+	public void setTimeVR(double timeVR) {
+		this.timeVR = timeVR;
 	}
 
 	public NodeRSU getSrcNodeRSU() {

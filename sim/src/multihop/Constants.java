@@ -28,8 +28,8 @@ public class Constants {
 	public final static int epchos = 1000;
 
 	// REQ prams 
-	public final static int NUM_REQ = 2; // rate *100
-	public final static int TSIM = 5; // simulation time
+	public final static int NUM_REQ = 10; // rate *100
+	public final static int TSIM = 15; // simulation time
 	public final static int TS = 1; // 1ts = 1s
 
 	public final static int MAXHOP = 1;
